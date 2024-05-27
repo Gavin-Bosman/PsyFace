@@ -6,6 +6,10 @@ import numpy as np
 # initialise videocapture object
 capture = cv.VideoCapture('Video_Song_Actor_01/Actor_01/02-02-01-01-01-02-01.mp4')
 
+# initialise videowriter object
+size = (int(capture.get(3)), int(capture.get(4)))
+result = cv.VideoWriter('Video_Song_Actor_01_Masked/02-02-01-01-01-02-01-masked.mp4', cv.VideoWriter.fourcc(*'MP4V'), 20.0, size)
+
 # Initialising the mediapipe task
 mpDraw = mp.solutions.drawing_utils
 mpFaceMesh = mp.solutions.face_mesh
@@ -54,7 +58,7 @@ face_oval = create_path(face_oval)
 while True:
     success, frame = capture.read()
 
-    # Mediapipe makes use of BGR images rather than RGB
+    # Mediapipe makes use of RGB while cv2 uses BGR
     imgRGB = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     results = faceMesh.process(imgRGB)
 
@@ -131,6 +135,16 @@ while True:
     face_skin = np.zeros_like(masked_frame)
     face_skin[oval_mask] = masked_frame[oval_mask] 
 
+    bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+    bin_mask[oval_mask] = 255
+    bin_mask[le_mask] = 0
+    bin_mask[re_mask] = 0
+    bin_mask[lip_mask] = 0
+
+    # later will store these BGR values in some tabular format for statistical analysis
+    print(cv.mean(frame, bin_mask))
+
+    # result.write(face_skin)
     cv.imshow('Video', face_skin)
 
     # The cv.waitkey() parameter changes the resulting frame rate, increase or decrease as needed
@@ -140,3 +154,4 @@ while True:
         break
 
 capture.release()
+# result.release()
