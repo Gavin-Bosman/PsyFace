@@ -9,8 +9,11 @@ MediaPipe's Face Mesh task provides automated detection of 468 unique facial lan
 The Ryerson Audio Visual Dataset of Emotional Speech and Song (RAVDESS) contains 7356 files. The dataset contains 24 actors, each vocalizing two lexically matched statements in neutral North American English. Furthermore, each vocalization is stored in three different modalities: audio-only (AO), video-only (VO) and audio-video (AV). This project focuses on the video aspect of the RAVDESS dataset. 
 
 ## Example
-The input videos used are taken from the RAVDESS dataset, an example of which can be found here:
-https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/1daae4c5-6db5-4a45-9399-f96c9ff6af86
+To get a visual understanding of what the face_skin_video.py program does, we feed in a video of an actor, that would look like the photo below.
 
-An example of the same video post-processing can be found here:
-https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/504443e4-e29d-44e2-94fd-dfc8242e5e92
+![image](https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/8d9c3d3b-ec6b-485c-8565-32da0caca509)
+
+
+Post processing, the video would look like the photo below. This represents the area of the original video that is masked prior to taking the mean pixel values of the image.
+
+![image](https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/9e340468-e5d6-4543-8d61-5b06d120249e)
