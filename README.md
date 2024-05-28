@@ -14,6 +14,8 @@ To get a visual understanding of what the face_skin_video.py program does, we fe
 ![image](https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/8d9c3d3b-ec6b-485c-8565-32da0caca509)
 
 
-Post processing, the video would look like the photo below. This represents the area of the original video that is masked prior to taking the mean pixel values of the image.
+Post processing, each frame of the video would look like the photo below. This represents the area of the original video that is masked prior to taking the mean pixel values of the image.
 
 ![image](https://github.com/Gavin-Bosman/face_skin_isolation/assets/124214234/9e340468-e5d6-4543-8d61-5b06d120249e)
+
+Using this facial masking, the mean pixel values, alongside the current timestamp of the video, are written to a csv file with the same name as the originally input video. 
