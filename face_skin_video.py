@@ -2,13 +2,7 @@ import cv2 as cv
 import mediapipe as mp
 import pandas as pd
 import numpy as np
-
-# initialise videocapture object
-capture = cv.VideoCapture('Video_Song_Actor_01/Actor_01/02-02-01-01-01-02-01.mp4')
-
-# initialise videowriter object
-size = (int(capture.get(3)), int(capture.get(4)))
-result = cv.VideoWriter('Video_Song_Actor_01_Masked/02-02-01-01-01-02-01-masked.mp4', cv.VideoWriter.fourcc(*'MP4V'), 20.0, size)
+import os
 
 # Initialising the mediapipe task
 mpDraw = mp.solutions.drawing_utils
@@ -49,109 +43,132 @@ def create_path(landmark_dataframe):
     
     return routes
 
-# preprocessing to not bog up between frame computation
 left_eye = create_path(left_eye)
 right_eye = create_path(right_eye)
 lips = create_path(lips)
 face_oval = create_path(face_oval)
 
-while True:
-    success, frame = capture.read()
+def process_video(inputDir, fileName, outputDir):
 
-    # Mediapipe makes use of RGB while cv2 uses BGR
-    imgRGB = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-    results = faceMesh.process(imgRGB)
+    # create videocapture object
+    capture = cv.VideoCapture(inputDir + fileName + ".mp4")
 
-    landmark_coords = []
+    # open csv file for writing
+    csv = open(outputDir + fileName + ".csv", "w")
+    csv.write("Timestamp,Red,Green,Blue\n")
 
-    if results.multi_face_landmarks:
-        for face_landmarks in results.multi_face_landmarks:
-            # display the actual face mesh with line of code below:
-            # mpDraw.draw_landmarks(image=frame, landmark_list=face_landmarks, connections=mpFaceMesh.FACEMESH_TESSELATION)
+    # face mesh index paths
+    global left_eye
+    global right_eye
+    global lips
+    global face_oval
 
-            # The multi_face_landmarks are provided in normalised [0,1] coordinates, convert to cartesian
-            for id,lm in enumerate(face_landmarks.landmark):
-                ih, iw, ic = frame.shape
-                x,y = int(lm.x * iw), int(lm.y * ih)
-                landmark_coords.append({'id':id, 'x':x, 'y':y})
+    while True:
+        success, frame = capture.read()
+
+        if not success:
+            break
+
+        # Mediapipe makes use of RGB while cv2 uses BGR
+        imgRGB = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+        results = faceMesh.process(imgRGB)
+
+        landmark_coords = []
+
+        if results.multi_face_landmarks:
+            for face_landmarks in results.multi_face_landmarks:
+                # display the actual face mesh with line of code below:
+                # mpDraw.draw_landmarks(image=frame, landmark_list=face_landmarks, connections=mpFaceMesh.FACEMESH_TESSELATION)
+
+                # The multi_face_landmarks are provided in normalised [0,1] coordinates, convert to cartesian
+                for id,lm in enumerate(face_landmarks.landmark):
+                    ih, iw, ic = frame.shape
+                    x,y = int(lm.x * iw), int(lm.y * ih)
+                    landmark_coords.append({'id':id, 'x':x, 'y':y})
+            
+        # create facial mask
+        le_screen_coords = []
+        re_screen_coords = []
+        lips_screen_coords = []
+        face_outline_coords = []
         
-    # create facial mask
-    le_screen_coords = []
-    re_screen_coords = []
-    lips_screen_coords = []
-    face_outline_coords = []
-    
-    # left eye screen coordinates
-    for cur_source, cur_target in left_eye:
-        source = landmark_coords[cur_source]
-        target = landmark_coords[cur_target]
-        le_screen_coords.append((source.get('x'),source.get('y')))
-        le_screen_coords.append((target.get('x'),target.get('y')))
-    
-    # right eye screen coordinates
-    for cur_source, cur_target in right_eye:
-        source = landmark_coords[cur_source]
-        target = landmark_coords[cur_target]
-        re_screen_coords.append((source.get('x'),source.get('y')))
-        re_screen_coords.append((target.get('x'),target.get('y')))
+        # left eye screen coordinates
+        for cur_source, cur_target in left_eye:
+            source = landmark_coords[cur_source]
+            target = landmark_coords[cur_target]
+            le_screen_coords.append((source.get('x'),source.get('y')))
+            le_screen_coords.append((target.get('x'),target.get('y')))
+        
+        # right eye screen coordinates
+        for cur_source, cur_target in right_eye:
+            source = landmark_coords[cur_source]
+            target = landmark_coords[cur_target]
+            re_screen_coords.append((source.get('x'),source.get('y')))
+            re_screen_coords.append((target.get('x'),target.get('y')))
 
-    # lips screen coordinates
-    for cur_source, cur_target in lips:
-        source = landmark_coords[cur_source]
-        target = landmark_coords[cur_target]
-        lips_screen_coords.append((source.get('x'),source.get('y')))
-        lips_screen_coords.append((target.get('x'),target.get('y')))
-    
-    # face oval screen coordinates
-    for cur_source, cur_target in face_oval:
-        source = landmark_coords[cur_source]
-        target = landmark_coords[cur_target]
-        face_outline_coords.append((source.get('x'),source.get('y')))
-        face_outline_coords.append((target.get('x'),target.get('y')))
+        # lips screen coordinates
+        for cur_source, cur_target in lips:
+            source = landmark_coords[cur_source]
+            target = landmark_coords[cur_target]
+            lips_screen_coords.append((source.get('x'),source.get('y')))
+            lips_screen_coords.append((target.get('x'),target.get('y')))
+        
+        # face oval screen coordinates
+        for cur_source, cur_target in face_oval:
+            source = landmark_coords[cur_source]
+            target = landmark_coords[cur_target]
+            face_outline_coords.append((source.get('x'),source.get('y')))
+            face_outline_coords.append((target.get('x'),target.get('y')))
 
-    le_mask = np.zeros((frame.shape[0],frame.shape[1]))
-    le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
-    le_mask = le_mask.astype(bool)
+        le_mask = np.zeros((frame.shape[0],frame.shape[1]))
+        le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+        le_mask = le_mask.astype(bool)
 
-    re_mask = np.zeros((frame.shape[0],frame.shape[1]))
-    re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
-    re_mask = re_mask.astype(bool)
+        re_mask = np.zeros((frame.shape[0],frame.shape[1]))
+        re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+        re_mask = re_mask.astype(bool)
 
-    lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
-    lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
-    lip_mask = lip_mask.astype(bool)
+        lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
+        lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+        lip_mask = lip_mask.astype(bool)
 
-    oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
-    oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
-    oval_mask = oval_mask.astype(bool)
+        oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
+        oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+        oval_mask = oval_mask.astype(bool)
 
-    # removing eyes, brows, and lips
-    masked_frame = frame
-    masked_frame[le_mask] = 0
-    masked_frame[re_mask] = 0
-    masked_frame[lip_mask] = 0
+        # removing eyes, brows, and lips
+        masked_frame = frame
+        masked_frame[le_mask] = 0
+        masked_frame[re_mask] = 0
+        masked_frame[lip_mask] = 0
 
-    # last step, masking out the bounding face shape
-    face_skin = np.zeros_like(masked_frame)
-    face_skin[oval_mask] = masked_frame[oval_mask] 
+        # last step, masking out the bounding face shape
+        face_skin = np.zeros_like(masked_frame)
+        face_skin[oval_mask] = masked_frame[oval_mask] 
 
-    bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
-    bin_mask[oval_mask] = 255
-    bin_mask[le_mask] = 0
-    bin_mask[re_mask] = 0
-    bin_mask[lip_mask] = 0
+        bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+        bin_mask[oval_mask] = 255
+        bin_mask[le_mask] = 0
+        bin_mask[re_mask] = 0
+        bin_mask[lip_mask] = 0
 
-    # later will store these BGR values in some tabular format for statistical analysis
-    print(cv.mean(frame, bin_mask))
+        # cv.imshow('Video', face_skin)
+        blue, green, red, *_ = cv.mean(frame, bin_mask)
+        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+        csv.write("{},{},{},{}\n".format(timestamp, red, green, blue))
 
-    # result.write(face_skin)
-    cv.imshow('Video', face_skin)
+        # The cv.waitkey() parameter changes the resulting frame rate, increase or decrease as needed
+        if cv.waitKey(20) == ord('x'):
+            cv.destroyAllWindows()
+            break
 
-    # The cv.waitkey() parameter changes the resulting frame rate, increase or decrease as needed
-    if cv.waitKey(30) == ord('x'):
-        # close the window on 'x' keypress
-        cv.destroyAllWindows()
-        break
+    capture.release()
+    csv.close()
 
-capture.release()
-# result.release()
+cwd = 'Video_Song_Actor_01/Actor_01/'
+fileList = os.listdir(cwd)
+fileList = [file[:20] for file in fileList]
+outputDir = 'Video_Song_Actor_01_Colour_Data/'
+
+for fileName in fileList:
+    process_video(cwd, fileName, outputDir)
