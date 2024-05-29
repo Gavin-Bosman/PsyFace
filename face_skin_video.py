@@ -155,7 +155,7 @@ def process_video(inputDir, fileName, outputDir):
         # cv.imshow('Video', face_skin)
         blue, green, red, *_ = cv.mean(frame, bin_mask)
         timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-        csv.write("{},{},{},{}\n".format(timestamp, red, green, blue))
+        csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
 
         # The cv.waitkey() parameter changes the resulting frame rate, increase or decrease as needed
         if cv.waitKey(20) == ord('x'):
@@ -165,10 +165,12 @@ def process_video(inputDir, fileName, outputDir):
     capture.release()
     csv.close()
 
-cwd = 'Video_Song_Actor_01/Actor_01/'
-fileList = os.listdir(cwd)
-fileList = [file[:20] for file in fileList]
-outputDir = 'Video_Song_Actor_01_Colour_Data/'
+dirs = ['Video_Song_Actor_01/Actor_01/', 'Video_Song_Actor_02/Actor_02/', 'Video_Song_Actor_03/Actor_03/']
+outputdirs = ['Video_Song_Actor_01_Colour_Data/', 'Video_Song_Actor_02_Colour_Data/', 'Video_Song_Actor_03_Colour_Data/']
 
-for fileName in fileList:
-    process_video(cwd, fileName, outputDir)
+for i in range(3):
+    cwd = dirs[i]
+    outputdir = outputdirs[i]
+    fileList = [file[:20] for file in os.listdir(cwd)]
+    for fileName in fileList:
+        process_video(cwd, fileName, outputdir)
