@@ -165,8 +165,8 @@ def process_video(inputDir, fileName, outputDir):
     capture.release()
     csv.close()
 
-dirs = ['Video_Song_Actor_04/Actor_04/', 'Video_Song_Actor_05/Actor_05/', 'Video_Song_Actor_06/Actor_06/']
-outputdirs = ['Video_Song_Actor_04_Colour_Data/', 'Video_Song_Actor_05_Colour_Data/', 'Video_Song_Actor_06_Colour_Data/']
+dirs = ['Video_Song_Actor_07/Actor_07/', 'Video_Song_Actor_08/Actor_08/', 'Video_Song_Actor_09/Actor_09/']
+outputdirs = ['Video_Song_Actor_07_Colour_Data/', 'Video_Song_Actor_08_Colour_Data/', 'Video_Song_Actor_09_Colour_Data/']
 
 for i in range(3):
     cwd = dirs[i]
