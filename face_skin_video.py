@@ -52,6 +52,7 @@ def process_video(inputDir, fileName, outputDir):
 
     # create videocapture object
     capture = cv.VideoCapture(inputDir + fileName + ".mp4")
+    print(inputDir + fileName + ".mp4")
 
     # open csv file for writing
     csv = open(outputDir + fileName + ".csv", "w")
@@ -85,6 +86,9 @@ def process_video(inputDir, fileName, outputDir):
                     ih, iw, ic = frame.shape
                     x,y = int(lm.x * iw), int(lm.y * ih)
                     landmark_coords.append({'id':id, 'x':x, 'y':y})
+        else:
+            # skip the frame if mediapipe cannot detect a face
+            continue
             
         # create facial mask
         le_screen_coords = []
@@ -165,12 +169,12 @@ def process_video(inputDir, fileName, outputDir):
     capture.release()
     csv.close()
 
-dirs = ['Video_Song_Actor_07/Actor_07/', 'Video_Song_Actor_08/Actor_08/', 'Video_Song_Actor_09/Actor_09/']
-outputdirs = ['Video_Song_Actor_07_Colour_Data/', 'Video_Song_Actor_08_Colour_Data/', 'Video_Song_Actor_09_Colour_Data/']
+dirs = ['Video_Song_Actor_10/Actor_10/', 'Video_Song_Actor_11/Actor_11/', 'Video_Song_Actor_12/Actor_12/']
+outputdirs = ['Video_Song_Actor_10_Colour_Data/', 'Video_Song_Actor_11_Colour_Data/', 'Video_Song_Actor_12_Colour_Data/']
 
 for i in range(3):
     cwd = dirs[i]
-    outputdir = outputdirs[i]
+    outputdir = 'Video_Song_Data/' + outputdirs[i]
     fileList = [file[:20] for file in os.listdir(cwd)]
     for fileName in fileList:
         process_video(cwd, fileName, outputdir)
