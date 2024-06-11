@@ -54,9 +54,13 @@ def process_video(inputDir, fileName, outputDir):
     capture = cv.VideoCapture(inputDir + fileName + ".mp4")
     print(inputDir + fileName + ".mp4")
 
+    # TODO make the videowriter dir a passed parameter to process_video
+    size = (int(capture.get(3)), int(capture.get(4)))
+    result = cv.VideoWriter(outputDir + fileName + ".mp4", cv.VideoWriter.fourcc(*'MP4V'), 20.0, size)
+
     # open csv file for writing
-    csv = open(outputDir + fileName + ".csv", "w")
-    csv.write("Timestamp,Red,Green,Blue\n")
+    # csv = open(outputDir + fileName + ".csv", "w")
+    # csv.write("Timestamp,Red,Green,Blue\n")
 
     # face mesh index paths
     global left_eye
@@ -157,9 +161,11 @@ def process_video(inputDir, fileName, outputDir):
         bin_mask[lip_mask] = 0
 
         # cv.imshow('Video', face_skin)
-        blue, green, red, *_ = cv.mean(frame, bin_mask)
-        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-        csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
+        # blue, green, red, *_ = cv.mean(frame, bin_mask)
+        # timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+        # csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
+
+        result.write(face_skin)
 
         # The cv.waitkey() parameter changes the resulting frame rate, increase or decrease as needed
         if cv.waitKey(20) == ord('x'):
@@ -167,14 +173,23 @@ def process_video(inputDir, fileName, outputDir):
             break
 
     capture.release()
-    csv.close()
+    result.release()
+    # csv.close()
 
-dirs = ['Video_Speech_Actor_16/Actor_16/', 'Video_Speech_Actor_17/Actor_17/', 'Video_Speech_Actor_18/Actor_18/']
-outputdirs = ['Video_Speech_Actor_16_Colour_Data/', 'Video_Speech_Actor_17_Colour_Data/', 'Video_Speech_Actor_18_Colour_Data/']
+dirs = ['Video_Speech_Actor_19/Actor_19/', 'Video_Speech_Actor_20/Actor_20/', 'Video_Speech_Actor_21/Actor_21/']
+outputdirs = ['Video_Speech_Actor_19_Colour_Data/', 'Video_Speech_Actor_20_Colour_Data/', 'Video_Speech_Actor_21_Colour_Data/']
 
-for i in range(len(dirs)):
-    cwd = dirs[i]
-    outputdir = 'Video_Speech_Data/' + outputdirs[i]
+song = os.getcwd() + "\\Video_Song_Actors_01-24\\"
+actors = os.listdir(song)
+
+### TODO when skipping frames because the face could not be detected, remove that frame from the outputted video file
+
+for i in range(len(actors)):
+    cwd = song + actors[i] + "\\" + actors[i][11:] + "\\"
+    outputdir = os.getcwd() + "\\Masked_Video_Output\\Song\\"
+
     fileList = [file[:20] for file in os.listdir(cwd)]
+
     for fileName in fileList:
-        process_video(cwd, fileName, outputdir)
+        if fileName[0:2] == "02":
+            process_video(cwd, fileName, outputdir)
