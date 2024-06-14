@@ -7,7 +7,7 @@ import os
 # Initialising the mediapipe task
 mpDraw = mp.solutions.drawing_utils
 mpFaceMesh = mp.solutions.face_mesh
-faceMesh = mpFaceMesh.FaceMesh(max_num_faces=1)
+faceMesh = mpFaceMesh.FaceMesh(max_num_faces=1, static_image_mode=False, min_detection_confidence=0.25, min_tracking_confidence=0.75)
 connections = mp.solutions.face_mesh_connections
 
 # landmark indicies of the left eye region
@@ -56,7 +56,7 @@ def process_video(inputDir, fileName, outputDir):
 
     # TODO make the videowriter dir a passed parameter to process_video
     size = (int(capture.get(3)), int(capture.get(4)))
-    result = cv.VideoWriter(outputDir + fileName + ".mp4", cv.VideoWriter.fourcc(*'MP4V'), 20.0, size)
+    result = cv.VideoWriter(outputDir + "testing" + ".mp4", cv.VideoWriter.fourcc(*'MP4V'), 20.0, size)
 
     # open csv file for writing
     # csv = open(outputDir + fileName + ".csv", "w")
@@ -150,9 +150,28 @@ def process_video(inputDir, fileName, outputDir):
         masked_frame[re_mask] = 0
         masked_frame[lip_mask] = 0
 
+        # bounding the outside of the face
+        # grey = cv.cvtColor(masked_frame, cv.COLOR_BGR2GRAY)
+        # blurred = cv.GaussianBlur(grey, (5,5), 0)
+        # _, thresholded = cv.threshold(blurred, 240, 255, cv.THRESH_BINARY_INV)
+ 
+        # cleaning up boundaries
+        #kernel = np.ones((3,3), dtype=np.uint8)
+        #thresholded = cv.morphologyEx(thresholded, cv.MORPH_OPEN, kernel)
+        #thresholded = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel)
+
+        # convert back to colour and mask original frame
+        #thresholded = cv.cvtColor(thresholded, cv.COLOR_GRAY2BGR)
+        #thresholded = cv.bitwise_and(masked_frame, thresholded)
+
         # last step, masking out the bounding face shape
         face_skin = np.zeros_like(masked_frame)
         face_skin[oval_mask] = masked_frame[oval_mask] 
+
+        # removing any face mesh artifacts
+        grey = cv.cvtColor(face_skin, cv.COLOR_BGR2GRAY)
+        white_mask = cv.inRange(grey, 220, 255)
+        face_skin[white_mask == 255] = 0
 
         bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
         bin_mask[oval_mask] = 255
@@ -179,17 +198,17 @@ def process_video(inputDir, fileName, outputDir):
 dirs = ['Video_Speech_Actor_19/Actor_19/', 'Video_Speech_Actor_20/Actor_20/', 'Video_Speech_Actor_21/Actor_21/']
 outputdirs = ['Video_Speech_Actor_19_Colour_Data/', 'Video_Speech_Actor_20_Colour_Data/', 'Video_Speech_Actor_21_Colour_Data/']
 
-song = os.getcwd() + "\\Video_Song_Actors_01-24\\"
-actors = os.listdir(song)
+song = os.getcwd() + "\\Video_Song_Actors_01-24\\Video_Song_Actor_04\\Actor_04\\"
+process_video(song, "02-02-01-01-01-01-04", os.getcwd() + "\\")
+#actors = os.listdir(song)
 
 ### TODO when skipping frames because the face could not be detected, remove that frame from the outputted video file
+#for i in range(len(actors)):
+#    cwd = song + actors[i] + "\\" + actors[i][11:] + "\\"
+#    outputdir = os.getcwd() + "\\Masked_Video_Output\\Song\\"
 
-for i in range(len(actors)):
-    cwd = song + actors[i] + "\\" + actors[i][11:] + "\\"
-    outputdir = os.getcwd() + "\\Masked_Video_Output\\Song\\"
+#    fileList = [file[:20] for file in os.listdir(cwd)]
 
-    fileList = [file[:20] for file in os.listdir(cwd)]
-
-    for fileName in fileList:
-        if fileName[0:2] == "02":
-            process_video(cwd, fileName, outputdir)
+#    for fileName in fileList:
+#        if fileName[0:2] == "02":
+#            process_video(cwd, fileName, outputdir)
