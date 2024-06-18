@@ -1,6 +1,3 @@
-### TODO add face oval masking to mask_face_region
-### TODO add function for writing colour codes in both rgb and hsv
-
 import cv2 as cv
 import mediapipe as mp
 import numpy as np
@@ -98,10 +95,15 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
                                                 min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
 
-    if not os.path.exists(inputDirectory):
+    # Type and value checks for function parameters
+    if not isinstance(inputDirectory, str):
+        raise TypeError("mask_face_region: invalid type for parameter inputDirectory.")
+    elif not os.path.exists(inputDirectory):
         raise ValueError("mask_face_region: input directory path is not a valid path, or the directory does not exist.")
     
-    if not os.path.exists(outputDirectory):
+    if not isinstance(outputDirectory, str):
+        raise TypeError("mask_face_region: invalid type for parameter outputDirectory.")
+    elif not os.path.exists(outputDirectory):
         raise ValueError("mask_face_region: output directory path is not a valid path, or the directory does not exist.")
     
     if maskType not in MASK_OPTIONS:
@@ -109,41 +111,55 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
 
     if colorSpace not in COLOR_SPACES:
         raise ValueError("mask_face_region: colorSpace must match one of COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE.")
+    
+    if not isinstance(withSubDirectories, bool):
+        raise TypeError("mask_face_region: invalid type for parameter withSubDirectories.")
+    
+    if not isinstance(extractColorInfo, bool):
+        raise TypeError("mask_face_region: invalid type for parameter extractColorInfo.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
     if not withSubDirectories:
          files_to_process = os.listdir(inputDirectory)
     else:
-        files_to_process = [file for dirs in os.walk(inputDirectory, topdown=True) for file in dirs[2]]
+        ### TODO remove if file[0:2] ... after processing
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(inputDirectory, topdown=True) 
+                            for file in files if file[0:2] == "02"]
+    
+    # Creating named output directories for video and csv output
+    if not os.path.isdir(outputDirectory + "\\Video_Output"):
+        os.mkdir(outputDirectory + "\\Video_Output")
+    if not os.path.isdir(outputDirectory + "\\CSV_Output"):
+        os.mkdir(outputDirectory + "\\CSV_Output")
 
     if maskType == FACE_SKIN_ISOLATION:
 
         for file in files_to_process:
 
             # Initialize capture and writer objects
-            filename, extension = os.path.splitext(file)
-            capture = cv.VideoCapture(inputDirectory + "\\" + file)
+            filename, extension = os.path.splitext(os.path.basename(file))
+            capture = cv.VideoCapture(file)
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\" + filename + "_masked" + extension,
+            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked.mp4",
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
             csv = None
             
             if extractColorInfo == True:
                 if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\" + filename + "_RGB.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
                     csv.write("Timestamp,Red,Green,Blue\n")
                 elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\" + filename + "_HSV.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
                     csv.write("Timestamp,Hue,Saturation,Value\n")
                 elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\" + filename + "_GRAYSCALE.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
                     csv.write("Timestamp,Value\n")
             
             while True:
                 success, frame = capture.read()
                 if not success:
-                    print("VideoCapture failed to read in current frame, moving on to the next frame.")
                     break
 
                 face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
