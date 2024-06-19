@@ -14,7 +14,7 @@ mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5)
 
 # read in the image, feel free to replace with any portrait image
-image = cv2.imread('Photos/portrait_2.jpg')
+image = cv2.imread('OpenCV_References/Photos/portrait_2.jpg')
 height, width, *_ = image.shape
 dims = (int(width*2.5), int(height*2.5))
 image = cv2.resize(image, dims, interpolation=cv2.INTER_LINEAR)
