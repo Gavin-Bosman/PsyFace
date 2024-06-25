@@ -131,7 +131,7 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
         ### TODO remove if file[0:2] ... after processing
         files_to_process = [os.path.join(path, file) 
                             for path, dirs, files in os.walk(inputDirectory, topdown=True) 
-                            for file in files]
+                            for file in files if file[0:2] == "02"]
     
     # Creating named output directories for video and csv output
     if not os.path.isdir(outputDirectory + "\\Video_Output"):
@@ -147,19 +147,19 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
             filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked.mp4",
+            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\Speech\\" + filename + "_masked.mp4",
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
             csv = None
             
             if extractColorInfo == True:
                 if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_RGB.csv", "w")
                     csv.write("Timestamp,Red,Green,Blue\n")
                 elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_HSV.csv", "w")
                     csv.write("Timestamp,Hue,Saturation,Value\n")
                 elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_GRAYSCALE.csv", "w")
                     csv.write("Timestamp,Value\n")
             
             while True:
@@ -270,10 +270,6 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
                         val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
                         timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
                         csv.write(f"{timestamp:.5f},{val:.5f}\n")
-
-                if cv.waitKey(20) == ord('x'):
-                    cv.destroyAllWindows()
-                    break
         
             capture.release()
             result.release()
@@ -287,19 +283,19 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
             filename, extension = os.path.splitext(file)
             capture = cv.VideoCapture(inputDirectory + "\\" + file)
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\" + filename + "_masked" + extension,
+            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked" + extension,
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
             csv = None
 
             if extractColorInfo == True:
                 if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\" + filename + "_RGB.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
                     csv.write("Timestamp,Red,Green,Blue\n")
                 elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\" + filename + "_HSV.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
                     csv.write("Timestamp,Hue,Saturation,Value\n")
                 elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\" + filename + "_GRAYSCALE.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
                     csv.write("Timestamp,Value\n")
             
             while True:
@@ -364,10 +360,6 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
                         val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
                         timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
                         csv.write(f"{timestamp:.5f},{val:.5f}\n")
-
-                if cv.waitKey(20) == ord('x'):
-                    cv.destroyAllWindows()
-                    break
         
             capture.release()
             result.release()
