@@ -128,10 +128,9 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
     if not withSubDirectories:
          files_to_process = os.listdir(inputDirectory)
     else:
-        ### TODO remove if file[0:2] ... after processing
         files_to_process = [os.path.join(path, file) 
                             for path, dirs, files in os.walk(inputDirectory, topdown=True) 
-                            for file in files if file[0:2] == "02"]
+                            for file in files]
     
     # Creating named output directories for video and csv output
     if not os.path.isdir(outputDirectory + "\\Video_Output"):
@@ -147,19 +146,19 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
             filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\Speech\\" + filename + "_masked.mp4",
+            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked.mp4",
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
             csv = None
             
             if extractColorInfo == True:
                 if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_RGB.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
                     csv.write("Timestamp,Red,Green,Blue\n")
                 elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_HSV.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
                     csv.write("Timestamp,Hue,Saturation,Value\n")
                 elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\CSV_Output\\Speech\\" + filename + "_GRAYSCALE.csv", "w")
+                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
                     csv.write("Timestamp,Value\n")
             
             while True:
@@ -369,9 +368,112 @@ COLOR_RED = 3
 COLOR_BLUE = 4
 COLOR_GREEN = 5
 
+def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
+    """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
+        values of the focus color. 
+    
+        Args:
+            filePath: String
+                The path string of the location of the file to be processed.
+            
+            focusColor: int | String
+                The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.
+        
+        Throws:
+            TypeError: given invalid parameter types.
+            ValueError: given a nonexisting file path, or a non RGB focus color.
+        
+        Returns:
+            min_color: ndarray[int]
+            max_color: ndarray[int]
+    """
+
+    global COLOR_RED
+    global COLOR_BLUE
+    global COLOR_GREEN
+
+    # Type and value checking before computation
+    if not isinstance(filePath, str):
+        raise TypeError("get_min_max_rgb: invalid type for filePath.")
+    elif not os.path.exists(filePath):
+        raise ValueError("get_min_max_rgb: filePath not a valid path.")
+    
+    if isinstance(focusColor, str):
+        if str.lower(focusColor) not in ["red", "green", "blue"]:
+            raise ValueError("get_min_max_rgb: focusColor not a valid color option.")
+    elif isinstance(focusColor, int):
+        if focusColor not in [COLOR_RED, COLOR_BLUE, COLOR_GREEN]:
+            raise ValueError("get_min_max_rgb: focusColor not a valid color option.")
+    else:
+        raise TypeError("get_min_max_rgb: invalid type for focusColor.")
+
+    capture = cv.VideoCapture(filePath)
+    min_x, min_y, max_x, max_y, min_color, max_color = 0,0,0,0,None,None
+    min_val, max_val = 255, 0
+
+    while True:
+
+        success, frame = capture.read()
+        if not success:
+            break
+
+        blue, green, red = cv.split(frame)
+
+        if focusColor == COLOR_RED or str.lower(focusColor) == "red":
+            max_y = np.where(red == red.max())[0][0]
+            max_x = np.where(red == red.max())[1][0]
+            cur_max_val = red[max_y, max_x]
+
+            min_y = np.where(red == red.min())[0][0]
+            min_x = np.where(red == red.min())[1][0]
+            cur_min_val = red[min_y, min_x]
+
+            if cur_max_val > max_val:
+                max_val = cur_max_val
+                max_color = frame[max_y, max_x]
+
+            if cur_min_val < min_val:
+                min_val = cur_min_val
+                min_color = frame[min_y, min_x]
+
+        elif focusColor == COLOR_BLUE or str.lower(focusColor) == "blue":
+            max_y = np.where(blue == blue.max())[0][0]
+            max_x = np.where(blue == blue.max())[1][0]
+            cur_max_val = blue[max_y, max_x]
+
+            min_y = np.where(blue == blue.min())[0][0]
+            min_x = np.where(blue == blue.min())[1][0]
+            cur_min_val = blue[min_y, min_x]
+
+            if cur_max_val > max_val:
+                max_val = cur_max_val
+                max_color = frame[max_y, max_x]
+
+            if cur_min_val < min_val:
+                min_val = cur_min_val
+                min_color = frame[min_y, min_x]
+        
+        else:
+            max_y = np.where(green == green.max())[0][0]
+            max_x = np.where(green == green.max())[1][0]
+            cur_max_val = green[max_y, max_x]
+
+            min_y = np.where(green == green.min())[0][0]
+            min_x = np.where(green == green.min())[1][0]
+            cur_min_val = green[min_y, min_x]
+
+            if cur_max_val > max_val:
+                max_val = cur_max_val
+                max_color = frame[max_y, max_x]
+
+            if cur_min_val < min_val:
+                min_val = cur_min_val
+                min_color = frame[min_y, min_x]
+    
+    return (min_color, max_color)
+
 ### TODO add custom hex color input
 ### TODO tweak face indicies for colour filtering (around eyes and lips)
-
 def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, alpha = 0.15, withSubDirectories = False):
     """Takes in one or more videos contaned in inputDirectory, and applies a specified colour filter to the facial skin
         region. The resulting videos are output to outputDirectory.
