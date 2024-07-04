@@ -1,16 +1,22 @@
 import cv2 as cv
+import cv2.typing
 import mediapipe as mp
 import numpy as np
 import pandas as pd
 import os
 
 # Defining pertinent facemesh landmark sets
-LEFT_EYE_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
+LEFT_EYE_BROW_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
+LEFT_EYE_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
 LEFT_CHEEK_IDX = [265, 261, 448, 449, 450, 451, 452, 350, 277, 371, 266, 425, 280, 346, 340, 265]
-RIGHT_EYE_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
+RIGHT_EYE_BROW_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
+RIGHT_EYE_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
 RIGHT_CHEEK_IDX = [35, 31, 228, 229, 230, 231, 232, 233, 128, 114, 126, 142, 36, 205, 50, 117, 111, 35]
 LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
-FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
+LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
+FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
+                 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10]
+FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
             152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
 
 def create_path(landmark_set):
@@ -40,12 +46,16 @@ def create_path(landmark_set):
     
     return routes
 
+LEFT_EYE_BROW_PATH = create_path(LEFT_EYE_BROW_IDX)
 LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
 LEFT_CHEEK_PATH = create_path(LEFT_CHEEK_IDX)
+RIGHT_EYE_BROW_PATH = create_path(RIGHT_EYE_BROW_IDX)
 RIGHT_EYE_PATH = create_path(RIGHT_EYE_IDX)
 RIGHT_CHEEK_PATH = create_path(RIGHT_CHEEK_IDX)
 LIPS_PATH = create_path(LIPS_IDX)
+LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
+FACE_OVAL_TIGHT_PATH = create_path(FACE_OVAL_TIGHT_IDX)
 
 FACE_OVAL = 1
 FACE_SKIN_ISOLATION = 2 
@@ -56,8 +66,13 @@ COLOR_SPACE_HSV = cv.COLOR_BGR2HSV
 COLOR_SPACE_GRAYSCALE = cv.COLOR_BGR2GRAY
 COLOR_SPACES = [COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE]
 
-def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLATION, withSubDirectories = False,
-                     extractColorInfo = False, colorSpace = COLOR_SPACE_RGB):
+COLOR_RED = 3
+COLOR_BLUE = 4
+COLOR_GREEN = 5
+COLOR_YELLOW = 6
+
+def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FACE_SKIN_ISOLATION, withSubDirectories:bool = False,
+                     extractColorInfo:bool = False, colorSpace:int = COLOR_SPACE_RGB):
     """Processes video files contained within inputDirectory with selected mask of choice.
 
     Args:
@@ -89,10 +104,10 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
     global MASK_OPTIONS
     global FACE_OVAL
     global FACE_SKIN_ISOLATION
-    global LEFT_EYE_PATH
-    global RIGHT_EYE_PATH
+    global LEFT_EYE_BROW_PATH
+    global RIGHT_EYE_BROW_PATH
     global LIPS_PATH
-    global FACE_OVAL_PATH
+    global FACE_OVAL_TIGHT_PATH
     global COLOR_SPACE_RGB
     global COLOR_SPACE_HSV
     global COLOR_SPACE_GRAYSCALE
@@ -186,14 +201,14 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
                 face_outline_coords = []
 
                 # left eye screen coordinates
-                for cur_source, cur_target in LEFT_EYE_PATH:
+                for cur_source, cur_target in LEFT_EYE_BROW_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     le_screen_coords.append((source.get('x'),source.get('y')))
                     le_screen_coords.append((target.get('x'),target.get('y')))
                 
                 # right eye screen coordinates
-                for cur_source, cur_target in RIGHT_EYE_PATH:
+                for cur_source, cur_target in RIGHT_EYE_BROW_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     re_screen_coords.append((source.get('x'),source.get('y')))
@@ -207,7 +222,7 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
                     lips_screen_coords.append((target.get('x'),target.get('y')))
                 
                 # face oval screen coordinates
-                for cur_source, cur_target in FACE_OVAL_PATH:
+                for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     face_outline_coords.append((source.get('x'),source.get('y')))
@@ -319,7 +334,7 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
                 face_outline_coords = []
                 
                 # face oval screen coordinates
-                for cur_source, cur_target in FACE_OVAL_PATH:
+                for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     face_outline_coords.append((source.get('x'),source.get('y')))
@@ -364,10 +379,6 @@ def mask_face_region(inputDirectory, outputDirectory, maskType = FACE_SKIN_ISOLA
             result.release()
             csv.close()
 
-COLOR_RED = 3
-COLOR_BLUE = 4
-COLOR_GREEN = 5
-
 def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
         values of the focus color. 
@@ -379,7 +390,7 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
             focusColor: int | String
                 The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.
         
-        Throws:
+        Raises:
             TypeError: given invalid parameter types.
             ValueError: given a nonexisting file path, or a non RGB focus color.
         
@@ -472,9 +483,87 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     
     return (min_color, max_color)
 
-### TODO add custom hex color input
-### TODO tweak face indicies for colour filtering (around eyes and lips)
-def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, alpha = 0.15, withSubDirectories = False):
+def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|int = COLOR_RED, weight: float = 8.0):
+    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by weight units in the masked
+        region of the image. This function makes use of the CIE Lab perceptually uniform color space to perform natural looking
+        color shifts on the face.
+
+        Args:
+            img: Matlike
+                An input still image or video frame.
+            mask: Matlike
+                A binary image with the same shape as img.
+            color: str | int
+                An integer or string literal specifying which color will be applied to the input image.
+            weight: float
+                The units to shift a* or b* by, depending on the specified color. 
+        
+        Raises:
+            TypeError: on invalid input parameter types.
+            ValueError: on undefined color values, or unmatching image and mask shapes.
+        
+        Returns:
+            result: Matlike
+                The input image, color-shifted in the region specified by the input mask. 
+
+    """
+
+    global COLOR_RED
+    global COLOR_BLUE
+    global COLOR_GREEN
+    global COLOR_YELLOW
+    
+    # Type checking input parameters
+    if not isinstance(img, cv2.typing.MatLike):
+        raise TypeError("color_shift: input image must be a Matlike.")
+    if not isinstance(mask, cv2.typing.MatLike):
+        raise TypeError("color_shift: image mask must be a Matlike.")
+    if img.shape[:2] != mask.shape[:2]:
+        raise ValueError("color_shift: image and mask have different shapes.")
+    
+    if isinstance(color, str):
+        if str.lower(color) not in ["red", "green", "blue", "yellow"]:
+            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+    elif isinstance(color, int):
+        if color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
+            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+    else:
+        raise TypeError("color_shift: color must be of type str or int.")
+    
+    if not isinstance(weight, float):
+        raise TypeError("color_shift: weight must be of type float.")
+
+    # Convert input image to CIE La*b* color space (perceptually uniform space)
+    image_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+    h, w = img.shape[:2]
+
+    # Color shift the image in the masked region
+    for i in range(h):
+        for j in range(w):
+            if mask[i][j] == 255:
+                if color == COLOR_RED or str.lower(color) == "red":
+                    cur_pixel = image_LAB[i,j]
+                    cur_pixel[1] = cur_pixel[1] + weight
+                    image_LAB[i,j] = cur_pixel
+                if color == COLOR_BLUE or str.lower(color) == "blue":
+                    cur_pixel = image_LAB[i,j]
+                    cur_pixel[2] = cur_pixel[2] - weight
+                    image_LAB[i,j] = cur_pixel
+                if color == COLOR_GREEN or str.lower(color) == "green":
+                    cur_pixel = image_LAB[i,j]
+                    cur_pixel[1] = cur_pixel[1] - weight
+                    image_LAB[i,j] = cur_pixel
+                if color == COLOR_YELLOW or str.lower(color) == "yellow":
+                    cur_pixel = image_LAB[i,j]
+                    cur_pixel[2] = cur_pixel[2] + weight
+                    image_LAB[i,j] = cur_pixel
+    
+    # Convert CIE La*b* back to BGR
+    result = cv.cvtColor(image_LAB, cv.COLOR_LAB2BGR)
+    
+    return result
+
+def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|int = COLOR_RED, weight:float = 8.0, withSubDirectories:bool = False):
     """Takes in one or more videos contaned in inputDirectory, and applies a specified colour filter to the facial skin
         region. The resulting videos are output to outputDirectory.
 
@@ -485,8 +574,8 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
             outputDirectory: String
                 A path string to the directory where outputted video files will be saved.
 
-            filterColor: int
-                An integer value in (3,4,5), representing red, green and blue respectively.
+            filterColor: list | tuple
+                An (R,G,B) color code contained within a tuple or list of length 3.
 
             alpha: float
                 The alpha value used in the cv.addWeighted() calculation, in the range [0,1].
@@ -499,46 +588,59 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
             ValueError: given invalid directory paths, or alpha value outside the range [0,1].
     """
 
+    global FACE_OVAL_PATH
+    global RIGHT_EYE_PATH
+    global LEFT_EYE_PATH
+    global LIPS_TIGHT_PATH
     global COLOR_RED
     global COLOR_BLUE
     global COLOR_GREEN
-    global FACE_OVAL_PATH
-    global RIGHT_EYE_PATH
-    global RIGHT_CHEEK_PATH
-    global LEFT_EYE_PATH
-    global LEFT_CHEEK_PATH
-    global LIPS_PATH
+    global COLOR_YELLOW
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
                                                 min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
+    singleFile = False
     
     # Performing checks on function parameters
     if not isinstance(inputDirectory, str):
         raise TypeError("face_color_filter: invalid type for parameter inputDirectory.")
     elif not os.path.exists(inputDirectory):
         raise ValueError("face_color_filter: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(inputDirectory):
+        singleFile = True
     
     if not isinstance(outputDirectory, str):
         raise TypeError("face_color_filter: invalid type for parameter outputDirectory.")
     elif not os.path.exists(outputDirectory):
         raise ValueError("face_color_filter: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(outputDirectory):
+        raise ValueError("Face_color_filter: outputDirectory must be a valid path to a directory.")
     
-    if not isinstance(alpha, float):
-        raise TypeError("face_color_filter: invalid type for parameter alpha.")
-    elif alpha > 1 or alpha < 0:
-        raise ValueError("face_color_filter: alpha value must lie in the range [0,1].")
+    if isinstance(filterColor, str):
+        if str.lower(filterColor) not in ["red", "green", "blue", "yellow"]:
+            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+    elif isinstance(filterColor, int):
+        if filterColor not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
+            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+    else:
+        raise TypeError("color_shift: color must be of type str or int.")
+
+    if not isinstance(weight, float):
+        raise TypeError("color_shift: weight must be of type float.")
 
     if not isinstance(withSubDirectories, bool):
         raise TypeError("mask_face_region: invalid type for parameter withSubDirectories.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
-    if not withSubDirectories:
+
+    if singleFile:
+        files_to_process.append(inputDirectory)
+    elif not withSubDirectories:
          files_to_process = os.listdir(inputDirectory)
     else:
-        ### TODO remove if file[0:2] ... after processing
         files_to_process = [os.path.join(path, file) 
                             for path, dirs, files in os.walk(inputDirectory, topdown=True) 
-                            for file in files if file[0:2] == "02"]
+                            for file in files]
     
     for file in files_to_process:
             
@@ -568,11 +670,10 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
                         landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
             else:
                 continue
-
+            
+            # Getting screen coordinates of facial landmarks
             le_screen_coords = []
-            #lc_screen_coords = []
             re_screen_coords = []
-            #rc_screen_coords = []
             lips_screen_coords = []
             face_outline_coords = []
 
@@ -583,29 +684,15 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
                 le_screen_coords.append((source.get('x'),source.get('y')))
                 le_screen_coords.append((target.get('x'),target.get('y')))
             
-            # Left cheek screen coordinates
-            #for cur_source, cur_target in LEFT_CHEEK_PATH:
-            #    source = landmark_screen_coords[cur_source]
-            #    target = landmark_screen_coords[cur_target]
-            #    lc_screen_coords.append((source.get('x'),source.get('y')))
-            #    lc_screen_coords.append((target.get('x'),target.get('y')))
-            
             # Right eye screen coordinates
             for cur_source, cur_target in RIGHT_EYE_PATH:
                 source = landmark_screen_coords[cur_source]
                 target = landmark_screen_coords[cur_target]
                 re_screen_coords.append((source.get('x'),source.get('y')))
                 re_screen_coords.append((target.get('x'),target.get('y')))
-            
-            # Right cheek screen coordinates
-            #for cur_source, cur_target in RIGHT_CHEEK_PATH:
-            #    source = landmark_screen_coords[cur_source]
-            #    target = landmark_screen_coords[cur_target]
-            #    rc_screen_coords.append((source.get('x'),source.get('y')))
-            #    rc_screen_coords.append((target.get('x'),target.get('y')))
 
             # Lips screen coordinates
-            for cur_source, cur_target in LIPS_PATH:
+            for cur_source, cur_target in LIPS_TIGHT_PATH:
                 source = landmark_screen_coords[cur_source]
                 target = landmark_screen_coords[cur_target]
                 lips_screen_coords.append((source.get('x'),source.get('y')))
@@ -618,22 +705,14 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
                 face_outline_coords.append((source.get('x'),source.get('y')))
                 face_outline_coords.append((target.get('x'),target.get('y')))
 
-            # Creating masked regions 
+            # Creating boolean masks for the facial landmarks 
             le_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
             le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
             le_mask = le_mask.astype(bool)
 
-            #lc_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
-            #lc_mask = cv.fillConvexPoly(lc_mask, np.array(lc_screen_coords), 1)
-            #lc_mask = lc_mask.astype(bool)
-
             re_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
             re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
             re_mask = re_mask.astype(bool)
-
-            #rc_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
-            #rc_mask = cv.fillConvexPoly(rc_mask, np.array(rc_screen_coords), 1)
-            #rc_mask = rc_mask.astype(bool)
 
             lip_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
             lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
@@ -643,47 +722,21 @@ def face_color_filter(inputDirectory, outputDirectory, filterColor = COLOR_RED, 
             oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
             oval_mask = oval_mask.astype(bool)
 
-            # Isolating overall face skin and cheeks for colouring
-            face_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+            # Isolating overall face skin for colouring
+            face_mask = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             face_mask[oval_mask] = 255
             face_mask[le_mask] = 0
             face_mask[re_mask] = 0
             face_mask[lip_mask] = 0
 
-            #cheek_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-            #cheek_mask[rc_mask] = 255
-            #cheek_mask[lc_mask] = 255
-
-            # Cleaning up masks with morphological operations
+            # Cleaning up mask with morphological operations
             kernel = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
-
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_OPEN, kernel)
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_CLOSE, kernel)
-            face_mask = cv.cvtColor(face_mask, cv.COLOR_GRAY2BGR)
 
-            #cheek_mask = cv.morphologyEx(cheek_mask, cv.MORPH_OPEN, kernel)
-            #cheek_mask = cv.morphologyEx(cheek_mask, cv.MORPH_CLOSE, kernel)
-            #cheek_mask = cv.cvtColor(cheek_mask, cv.COLOR_GRAY2BGR)
-
-            # Colouring masked regions
-            if filterColor == COLOR_RED:
-                masked_img = np.copy(frame)
-                masked_img[(face_mask == 255).all(-1)] = [0,0,255]
-
-                cv.addWeighted(masked_img, alpha, frame, 1, 0, frame)
-
-            elif filterColor == COLOR_BLUE:
-                masked_img = np.copy(frame)
-                masked_img[(face_mask == 255).all(-1)] = [255,0,0]
-
-                cv.addWeighted(masked_img, alpha, frame, 1, 0, frame)
-            else:
-                masked_img = np.copy(frame)
-                masked_img[(face_mask == 255).all(-1)] = [0,255,0]
-
-                cv.addWeighted(masked_img, alpha, frame, 1, 0, frame)
-            
-            result.write(frame)
+            frame_coloured = color_shift(frame, face_mask, filterColor, weight)
+    
+            result.write(frame_coloured)
 
         capture.release()
         result.release()
