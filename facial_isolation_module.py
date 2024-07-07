@@ -4,6 +4,7 @@ import mediapipe as mp
 import numpy as np
 import pandas as pd
 import os
+from typing import Callable
 
 # Defining pertinent facemesh landmark sets
 LEFT_EYE_BROW_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
@@ -19,7 +20,7 @@ FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397,
 FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
             152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
 
-def create_path(landmark_set):
+def create_path(landmark_set:list[int]) -> list[tuple]:
     """Creates a list of interconnected points, given a set of facial landmark indicies.
     
     Args: 
@@ -71,8 +72,12 @@ COLOR_BLUE = 4
 COLOR_GREEN = 5
 COLOR_YELLOW = 6
 
+# Defining useful timing functions
+def sigmoid(x:float, k:float = 1.0) -> float:
+    return 1/(1 + np.exp(-k * x))
+
 def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FACE_SKIN_ISOLATION, withSubDirectories:bool = False,
-                     extractColorInfo:bool = False, colorSpace:int = COLOR_SPACE_RGB):
+                     extractColorInfo:bool = False, colorSpace:int = COLOR_SPACE_RGB) -> None:
     """Processes video files contained within inputDirectory with selected mask of choice.
 
     Args:
@@ -160,6 +165,10 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
             # Initialize capture and writer objects
             filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
+            if not capture.isOpened():
+                print("mask_face_region: Error opening videoCapture object.")
+                return -1
+
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked.mp4",
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
@@ -295,7 +304,11 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
 
             # Initializing capture and writer objects
             filename, extension = os.path.splitext(file)
-            capture = cv.VideoCapture(inputDirectory + "\\" + file)
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened:
+                print("mask_face_region: Error opening videoCapture object.")
+                return -1
+
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked" + extension,
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
@@ -419,6 +432,10 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
         raise TypeError("get_min_max_rgb: invalid type for focusColor.")
 
     capture = cv.VideoCapture(filePath)
+    if not capture.isOpened():
+        print("get_min_max_rgb: Error opening videoCapture object.")
+        return -1
+
     min_x, min_y, max_x, max_y, min_color, max_color = 0,0,0,0,None,None
     min_val, max_val = 255, 0
 
@@ -483,7 +500,8 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     
     return (min_color, max_color)
 
-def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|int = COLOR_RED, weight: float = 8.0):
+def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float, color: str|int = COLOR_RED,
+                maxShift: float = 8.0) -> cv2.typing.MatLike:
     """Takes in an image and a mask of the same shape, and shifts the specified color temperature by weight units in the masked
         region of the image. This function makes use of the CIE Lab perceptually uniform color space to perform natural looking
         color shifts on the face.
@@ -491,13 +509,19 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|in
         Args:
             img: Matlike
                 An input still image or video frame.
+
             mask: Matlike
                 A binary image with the same shape as img.
+
+            weight: float
+                The current color shifting weight; a float in the range [0,1]. 
+
             color: str | int
                 An integer or string literal specifying which color will be applied to the input image.
-            weight: float
-                The units to shift a* or b* by, depending on the specified color. 
-        
+
+            maxShift: float
+                The maximum units to shift the colour temperature by, during peak onset.
+            
         Raises:
             TypeError: on invalid input parameter types.
             ValueError: on undefined color values, or unmatching image and mask shapes.
@@ -515,11 +539,14 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|in
     
     # Type checking input parameters
     if not isinstance(img, cv2.typing.MatLike):
-        raise TypeError("color_shift: input image must be a Matlike.")
+        raise TypeError("color_shift: parameter img must be a Matlike.")
     if not isinstance(mask, cv2.typing.MatLike):
-        raise TypeError("color_shift: image mask must be a Matlike.")
+        raise TypeError("color_shift: parameter mask must be a Matlike.")
     if img.shape[:2] != mask.shape[:2]:
         raise ValueError("color_shift: image and mask have different shapes.")
+    
+    if not isinstance(weight, float):
+        raise TypeError("color_shift: parameter weight must be of type float.")
     
     if isinstance(color, str):
         if str.lower(color) not in ["red", "green", "blue", "yellow"]:
@@ -528,10 +555,12 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|in
         if color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
             raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
     else:
-        raise TypeError("color_shift: color must be of type str or int.")
+        raise TypeError("color_shift: parameter color must be of type str or int.")
     
-    if not isinstance(weight, float):
-        raise TypeError("color_shift: weight must be of type float.")
+    if not isinstance(maxShift, float):
+        raise TypeError("color_shift: parameter maxShift must be of type float.")
+    
+
 
     # Convert input image to CIE La*b* color space (perceptually uniform space)
     image_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB)
@@ -543,19 +572,19 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|in
             if mask[i][j] == 255:
                 if color == COLOR_RED or str.lower(color) == "red":
                     cur_pixel = image_LAB[i,j]
-                    cur_pixel[1] = cur_pixel[1] + weight
+                    cur_pixel[1] = cur_pixel[1] + (weight * maxShift)
                     image_LAB[i,j] = cur_pixel
                 if color == COLOR_BLUE or str.lower(color) == "blue":
                     cur_pixel = image_LAB[i,j]
-                    cur_pixel[2] = cur_pixel[2] - weight
+                    cur_pixel[2] = cur_pixel[2] - (weight * maxShift)
                     image_LAB[i,j] = cur_pixel
                 if color == COLOR_GREEN or str.lower(color) == "green":
                     cur_pixel = image_LAB[i,j]
-                    cur_pixel[1] = cur_pixel[1] - weight
+                    cur_pixel[1] = cur_pixel[1] - (weight * maxShift)
                     image_LAB[i,j] = cur_pixel
                 if color == COLOR_YELLOW or str.lower(color) == "yellow":
                     cur_pixel = image_LAB[i,j]
-                    cur_pixel[2] = cur_pixel[2] + weight
+                    cur_pixel[2] = cur_pixel[2] + (weight * maxShift)
                     image_LAB[i,j] = cur_pixel
     
     # Convert CIE La*b* back to BGR
@@ -563,7 +592,8 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, color: str|in
     
     return result
 
-def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|int = COLOR_RED, weight:float = 8.0, withSubDirectories:bool = False):
+def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offset:float, timingFunc:Callable[...,float] = sigmoid,
+                      filterColor:str|int = COLOR_RED, withSubDirectories:bool = False) -> None: 
     """Takes in one or more videos contaned in inputDirectory, and applies a specified colour filter to the facial skin
         region. The resulting videos are output to outputDirectory.
 
@@ -573,12 +603,18 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|i
 
             outputDirectory: String
                 A path string to the directory where outputted video files will be saved.
+            
+            onset: float
+                The onset time of the colour filtering.
+            
+            offset: float
+                The offset time of the colour filtering.
+            
+            timingFunc: Function() -> float
+                Any function that takes at least one input float (time), and returns a float.
 
-            filterColor: list | tuple
-                An (R,G,B) color code contained within a tuple or list of length 3.
-
-            alpha: float
-                The alpha value used in the cv.addWeighted() calculation, in the range [0,1].
+            filterColor: String | int
+                Either a string literal specifying the color of choice, or a predefined integer constant.
             
             withSubDirectories: bool
                 A boolean value indicating whether the input directory contains nested directories.
@@ -615,20 +651,27 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|i
     elif not os.path.isdir(outputDirectory):
         raise ValueError("Face_color_filter: outputDirectory must be a valid path to a directory.")
     
+    if not isinstance(onset, float):
+        raise TypeError("face_color_filter: invalid type for parameter onset.")
+    if not isinstance(offset, float):
+        raise TypeError("face_color_filter: invalid type for parameter offset.")
+    
+    if isinstance(timingFunc, Callable):
+        if not isinstance(timingFunc(1.0), float):
+            raise ValueError("face_color_filter: timingFunc must return a float value.")
+    # add check for return value in range [0,1]
+
     if isinstance(filterColor, str):
         if str.lower(filterColor) not in ["red", "green", "blue", "yellow"]:
-            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_filter: color must be one of: red, green, blue, yellow.")
     elif isinstance(filterColor, int):
         if filterColor not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
-            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_filter: color must be one of: red, green, blue, yellow.")
     else:
-        raise TypeError("color_shift: color must be of type str or int.")
-
-    if not isinstance(weight, float):
-        raise TypeError("color_shift: weight must be of type float.")
+        raise TypeError("Face_color_filter: color must be of type str or int.")
 
     if not isinstance(withSubDirectories, bool):
-        raise TypeError("mask_face_region: invalid type for parameter withSubDirectories.")
+        raise TypeError("Face_color_filter: invalid type for parameter withSubDirectories.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
@@ -647,9 +690,16 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|i
         # Initialize capture and writer objects
         filename, extension = os.path.splitext(os.path.basename(file))
         capture = cv.VideoCapture(file)
+        if not capture.isOpened():
+            print("face_color_filter: Error opening video file.")
+            return -1
+
         size = (int(capture.get(3)), int(capture.get(4)))
         result = cv.VideoWriter(outputDirectory + "\\" + filename + "_color_filter.mp4",
                                 cv.VideoWriter.fourcc(*'MP4V'), 30, size)
+        frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
+        fps = capture.get(cv.CAP_PROP_FPS)
+        cap_duration = float(frame_count)/float(fps)
             
         while True:
 
@@ -734,9 +784,20 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, filterColor:str|i
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_OPEN, kernel)
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_CLOSE, kernel)
 
-            frame_coloured = color_shift(frame, face_mask, filterColor, weight)
-    
-            result.write(frame_coloured)
+            dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+            
+
+            if dt < onset:
+                result.write(frame)
+            elif dt < offset:
+                weight = timingFunc(dt)
+                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor)
+                result.write(frame_coloured)
+            else:
+                dt = cap_duration - dt
+                weight = timingFunc(dt)
+                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor)
+                result.write(frame_coloured)
 
         capture.release()
         result.release()
