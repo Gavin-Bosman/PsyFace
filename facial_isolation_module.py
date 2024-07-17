@@ -500,8 +500,8 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     
     return (min_color, max_color)
 
-def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float, color: str|int = COLOR_RED,
-                maxShift: float = 8.0) -> cv2.typing.MatLike:
+def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float, sat_delta: float = 0.0, 
+                sat_only: bool = False, color: str|int = COLOR_RED, maxShift: float = 8.0) -> cv2.typing.MatLike:
     """Takes in an image and a mask of the same shape, and shifts the specified color temperature by weight units in the masked
         region of the image. This function makes use of the CIE Lab perceptually uniform color space to perform natural looking
         color shifts on the face.
@@ -515,6 +515,12 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
 
             weight: float
                 The current color shifting weight; a float in the range [0,1]. 
+            
+            sat_delta: float
+                The units to shift the images saturation.
+            
+            sat_only: bool
+                A specifier that indicates if only the saturation is being modified.
 
             color: str | int
                 An integer or string literal specifying which color will be applied to the input image.
@@ -547,6 +553,8 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
     
     if not isinstance(weight, float):
         raise TypeError("color_shift: parameter weight must be of type float.")
+    if not isinstance(sat_delta, float):
+        raise TypeError("color_shift: parameter sat_delta must be of type float.")
     
     if isinstance(color, str):
         if str.lower(color) not in ["red", "green", "blue", "yellow"]:
@@ -560,40 +568,56 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
     if not isinstance(maxShift, float):
         raise TypeError("color_shift: parameter maxShift must be of type float.")
     
+    result = None
 
+    if not sat_only:
 
-    # Convert input image to CIE La*b* color space (perceptually uniform space)
-    image_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB)
-    h, w = img.shape[:2]
+        img_LAB = None
 
-    # Color shift the image in the masked region
-    for i in range(h):
-        for j in range(w):
-            if mask[i][j] == 255:
-                if color == COLOR_RED or str.lower(color) == "red":
-                    cur_pixel = image_LAB[i,j]
-                    cur_pixel[1] = cur_pixel[1] + (weight * maxShift)
-                    image_LAB[i,j] = cur_pixel
-                if color == COLOR_BLUE or str.lower(color) == "blue":
-                    cur_pixel = image_LAB[i,j]
-                    cur_pixel[2] = cur_pixel[2] - (weight * maxShift)
-                    image_LAB[i,j] = cur_pixel
-                if color == COLOR_GREEN or str.lower(color) == "green":
-                    cur_pixel = image_LAB[i,j]
-                    cur_pixel[1] = cur_pixel[1] - (weight * maxShift)
-                    image_LAB[i,j] = cur_pixel
-                if color == COLOR_YELLOW or str.lower(color) == "yellow":
-                    cur_pixel = image_LAB[i,j]
-                    cur_pixel[2] = cur_pixel[2] + (weight * maxShift)
-                    image_LAB[i,j] = cur_pixel
-    
-    # Convert CIE La*b* back to BGR
-    result = cv.cvtColor(image_LAB, cv.COLOR_LAB2BGR)
-    
+        if sat_delta != 0.0:
+            img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
+            h,s,v = cv.split(img_hsv)
+            s = np.where(mask == 255, s + (weight * sat_delta), s)
+            np.clip(s,0,255)
+            img_hsv = cv.merge([h,s,v])
+
+            img_LAB = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+
+        # Convert input image to CIE La*b* color space (perceptually uniform space)
+        img_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB).astype(np.float32)
+        l,a,b = cv.split(img_LAB)
+
+        if color == COLOR_RED or str.lower(color) == "red":
+            a = np.where(mask==255, a + (weight * maxShift), a)
+            np.clip(a, -128, 127)
+        if color == COLOR_BLUE or str.lower(color) == "blue":
+            b = np.where(mask==255, b - (weight * maxShift), b)
+            np.clip(a, -128, 127)
+        if color == COLOR_GREEN or str.lower(color) == "green":
+            a = np.where(mask==255, a - (weight * maxShift), a)
+            np.clip(a, -128, 127)
+        if color == COLOR_YELLOW or str.lower(color) == "yellow":
+            b = np.where(mask==255, b + (weight * maxShift), b)
+            np.clip(a, -128, 127)
+        
+        img_LAB = cv.merge([l,a,b])
+        
+        # Convert CIE La*b* back to BGR
+        result = cv.cvtColor(img_LAB.astype(np.uint8), cv.COLOR_LAB2BGR)
+        
+    elif sat_delta != 0.0:
+        img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
+        h,s,v = cv.split(img_hsv)
+        s = np.where(mask == 255, s + (weight * sat_delta), s)
+        np.clip(s,0,255)
+        img_hsv = cv.merge([h,s,v])
+
+        result = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+
     return result
 
-def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offset:float, timingFunc:Callable[...,float] = sigmoid,
-                      filterColor:str|int = COLOR_RED, withSubDirectories:bool = False) -> None: 
+def face_color_shift(inputDirectory:str, outputDirectory:str, onset:float, offset:float, maxShift: float = 8.0, sat_delta: float = 0.0,
+                     timingFunc:Callable[...,float] = sigmoid, filterColor:str|int = COLOR_RED, withSubDirectories:bool = False) -> None: 
     """Takes in one or more videos contaned in inputDirectory, and applies a specified colour filter to the facial skin
         region. The resulting videos are output to outputDirectory.
 
@@ -609,6 +633,12 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offs
             
             offset: float
                 The offset time of the colour filtering.
+            
+            maxShift: float
+                The maximum units to shift the colour temperature by, during peak onset.
+            
+            sat_delta: float
+                The units to shift the images saturation.
             
             timingFunc: Function() -> float
                 Any function that takes at least one input float (time), and returns a float.
@@ -638,40 +668,44 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offs
     
     # Performing checks on function parameters
     if not isinstance(inputDirectory, str):
-        raise TypeError("face_color_filter: invalid type for parameter inputDirectory.")
+        raise TypeError("face_color_shift: invalid type for parameter inputDirectory.")
     elif not os.path.exists(inputDirectory):
-        raise ValueError("face_color_filter: input directory path is not a valid path, or the directory does not exist.")
+        raise ValueError("face_color_shift: input directory path is not a valid path, or the directory does not exist.")
     elif os.path.isfile(inputDirectory):
         singleFile = True
     
     if not isinstance(outputDirectory, str):
-        raise TypeError("face_color_filter: invalid type for parameter outputDirectory.")
+        raise TypeError("face_color_shift: invalid type for parameter outputDirectory.")
     elif not os.path.exists(outputDirectory):
-        raise ValueError("face_color_filter: output directory path is not a valid path, or the directory does not exist.")
+        raise ValueError("face_color_shift: output directory path is not a valid path, or the directory does not exist.")
     elif not os.path.isdir(outputDirectory):
-        raise ValueError("Face_color_filter: outputDirectory must be a valid path to a directory.")
+        raise ValueError("Face_color_shift: outputDirectory must be a valid path to a directory.")
     
     if not isinstance(onset, float):
-        raise TypeError("face_color_filter: invalid type for parameter onset.")
+        raise TypeError("face_color_shift: parameter onset must be a float.")
     if not isinstance(offset, float):
-        raise TypeError("face_color_filter: invalid type for parameter offset.")
+        raise TypeError("face_color_shift: parameter offset must be a float.")
+    if not isinstance(maxShift, float):
+        raise TypeError("face_color_shift: parameter maxShift must be a float.")
+    if not isinstance(sat_delta, float):
+        raise TypeError("face_color_shift: parameter sat_delta must be a float.")
     
     if isinstance(timingFunc, Callable):
         if not isinstance(timingFunc(1.0), float):
-            raise ValueError("face_color_filter: timingFunc must return a float value.")
+            raise ValueError("face_color_shift: timingFunc must return a float value.")
     # add check for return value in range [0,1]
 
     if isinstance(filterColor, str):
         if str.lower(filterColor) not in ["red", "green", "blue", "yellow"]:
-            raise ValueError("Face_color_filter: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
     elif isinstance(filterColor, int):
         if filterColor not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
-            raise ValueError("Face_color_filter: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
     else:
-        raise TypeError("Face_color_filter: color must be of type str or int.")
+        raise TypeError("Face_color_shift: color must be of type str or int.")
 
     if not isinstance(withSubDirectories, bool):
-        raise TypeError("Face_color_filter: invalid type for parameter withSubDirectories.")
+        raise TypeError("Face_color_shift: invalid type for parameter withSubDirectories.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
@@ -691,7 +725,7 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offs
         filename, extension = os.path.splitext(os.path.basename(file))
         capture = cv.VideoCapture(file)
         if not capture.isOpened():
-            print("face_color_filter: Error opening video file.")
+            print("face_color_shift: Error opening video file.")
             return -1
 
         size = (int(capture.get(3)), int(capture.get(4)))
@@ -700,6 +734,7 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offs
         frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
         fps = capture.get(cv.CAP_PROP_FPS)
         cap_duration = float(frame_count)/float(fps)
+        print("Duration: ", cap_duration)
             
         while True:
 
@@ -786,17 +821,16 @@ def face_color_filter(inputDirectory:str, outputDirectory:str, onset:float, offs
 
             dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
             
-
             if dt < onset:
                 result.write(frame)
             elif dt < offset:
                 weight = timingFunc(dt)
-                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor)
+                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor, maxShift=maxShift, sat_delta=sat_delta)
                 result.write(frame_coloured)
             else:
                 dt = cap_duration - dt
                 weight = timingFunc(dt)
-                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor)
+                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor, maxShift=maxShift, sat_delta=sat_delta)
                 result.write(frame_coloured)
 
         capture.release()
