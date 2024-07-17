@@ -5,100 +5,24 @@ import numpy as np
 import pandas as pd
 import os
 from typing import Callable
+from utils import *
 
-# Defining pertinent facemesh landmark sets
-LEFT_EYE_BROW_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
-LEFT_EYE_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
-LEFT_CHEEK_IDX = [265, 261, 448, 449, 450, 451, 452, 350, 277, 371, 266, 425, 280, 346, 340, 265]
-RIGHT_EYE_BROW_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
-RIGHT_EYE_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
-RIGHT_CHEEK_IDX = [35, 31, 228, 229, 230, 231, 232, 233, 128, 114, 126, 142, 36, 205, 50, 117, 111, 35]
-LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
-LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
-FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
-                 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10]
-FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
-            152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
-
-def create_path(landmark_set:list[int]) -> list[tuple]:
-    """Creates a list of interconnected points, given a set of facial landmark indicies.
-    
-    Args: 
-        landmark_set: a python list containing facial landmark indicies.
-    
-    Returns:
-        routes: a list of tuples containing overlapping points, forming a path."""
-    
-    # Connvert the input list to a two-column dataframe
-    landmark_dataframe = pd.DataFrame([(landmark_set[i], landmark_set[i+1]) for i in range(len(landmark_set) - 1)], columns=['p1', 'p2'])
-    routes = []
-
-    # Initialise the first two points
-    p1 = landmark_dataframe.iloc[0]['p1']
-    p2 = landmark_dataframe.iloc[0]['p2']
-
-    for i in range(0, landmark_dataframe.shape[0]):
-        obj = landmark_dataframe[landmark_dataframe['p1'] == p2]
-        p1 = obj['p1'].values[0]
-        p2 = obj['p2'].values[0]
-
-        current_route = [p1, p2]
-        routes.append(current_route)
-    
-    return routes
-
-LEFT_EYE_BROW_PATH = create_path(LEFT_EYE_BROW_IDX)
-LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
-LEFT_CHEEK_PATH = create_path(LEFT_CHEEK_IDX)
-RIGHT_EYE_BROW_PATH = create_path(RIGHT_EYE_BROW_IDX)
-RIGHT_EYE_PATH = create_path(RIGHT_EYE_IDX)
-RIGHT_CHEEK_PATH = create_path(RIGHT_CHEEK_IDX)
-LIPS_PATH = create_path(LIPS_IDX)
-LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
-FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
-FACE_OVAL_TIGHT_PATH = create_path(FACE_OVAL_TIGHT_IDX)
-
-FACE_OVAL = 1
-FACE_SKIN_ISOLATION = 2 
-MASK_OPTIONS = [FACE_OVAL, FACE_SKIN_ISOLATION]
-
-COLOR_SPACE_RGB = cv.COLOR_BGR2RGB
-COLOR_SPACE_HSV = cv.COLOR_BGR2HSV
-COLOR_SPACE_GRAYSCALE = cv.COLOR_BGR2GRAY
-COLOR_SPACES = [COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE]
-
-COLOR_RED = 3
-COLOR_BLUE = 4
-COLOR_GREEN = 5
-COLOR_YELLOW = 6
-
-# Defining useful timing functions
-def sigmoid(x:float, k:float = 1.0) -> float:
-    return 1/(1 + np.exp(-k * x))
-
-def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FACE_SKIN_ISOLATION, withSubDirectories:bool = False,
-                     extractColorInfo:bool = False, colorSpace:int = COLOR_SPACE_RGB) -> None:
-    """Processes video files contained within inputDirectory with selected mask of choice.
+def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False) -> None:
+    """Applies specified mask type to video files located in input_dir.
 
     Args:
-        inputDirectory: String
+        input_dir: String
             A path string of the directory containing videos to process.
 
-        outputDirectory: String
+        output_dir: String
             A path string of the directory where processed videos will be written to.
 
-        maskType: Integer
+        mask_type: Integer
             An integer indicating the type of mask to apply to the input videos. This can be one of two options:
             either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.
 
-        withSubDirectories: Boolean, 
-            Indicating if the input directory contains subfolders.
-
-        extractColorInfo: Boolean 
-            Indicating if mean pixel values should be recorded and output in csv format.
-
-        colorSpace: Integer
-            Indicating which color space to operate in.
+        with_sub_dirs: Boolean, 
+            Indicates if the input directory contains subfolders.
     
     Raises:
         ValueError: given invalid pathstrings or an unknown mask type.
@@ -108,10 +32,12 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
 
     global MASK_OPTIONS
     global FACE_OVAL
+    global FACE_OVAL_TIGHT
     global FACE_SKIN_ISOLATION
     global LEFT_EYE_BROW_PATH
     global RIGHT_EYE_BROW_PATH
     global LIPS_PATH
+    global FACE_OVAL_PATH
     global FACE_OVAL_TIGHT_PATH
     global COLOR_SPACE_RGB
     global COLOR_SPACE_HSV
@@ -119,46 +45,43 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
     global COLOR_SPACES
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
                                                 min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
+    singleFile = False
 
     # Type and value checks for function parameters
-    if not isinstance(inputDirectory, str):
+    if not isinstance(input_dir, str):
         raise TypeError("mask_face_region: invalid type for parameter inputDirectory.")
-    elif not os.path.exists(inputDirectory):
+    elif not os.path.exists(input_dir):
         raise ValueError("mask_face_region: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
     
-    if not isinstance(outputDirectory, str):
+    if not isinstance(output_dir, str):
         raise TypeError("mask_face_region: invalid type for parameter outputDirectory.")
-    elif not os.path.exists(outputDirectory):
+    elif not os.path.exists(output_dir):
         raise ValueError("mask_face_region: output directory path is not a valid path, or the directory does not exist.")
     
-    if maskType not in MASK_OPTIONS:
+    if mask_type not in MASK_OPTIONS:
         raise ValueError("mask_face_region: maskType must be either 1: indicating FACE_OVAL, or 2: indicating FACE_SKIN_ISOLATION.")
-
-    if colorSpace not in COLOR_SPACES:
-        raise ValueError("mask_face_region: colorSpace must match one of COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE.")
     
-    if not isinstance(withSubDirectories, bool):
+    if not isinstance(with_sub_dirs, bool):
         raise TypeError("mask_face_region: invalid type for parameter withSubDirectories.")
-    
-    if not isinstance(extractColorInfo, bool):
-        raise TypeError("mask_face_region: invalid type for parameter extractColorInfo.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
-    if not withSubDirectories:
-         files_to_process = os.listdir(inputDirectory)
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+         files_to_process = os.listdir(input_dir)
     else:
         files_to_process = [os.path.join(path, file) 
-                            for path, dirs, files in os.walk(inputDirectory, topdown=True) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
                             for file in files]
     
     # Creating named output directories for video and csv output
-    if not os.path.isdir(outputDirectory + "\\Video_Output"):
-        os.mkdir(outputDirectory + "\\Video_Output")
-    if not os.path.isdir(outputDirectory + "\\CSV_Output"):
-        os.mkdir(outputDirectory + "\\CSV_Output")
+    if not os.path.isdir(output_dir + "\\Video_Output"):
+        os.mkdir(output_dir + "\\Video_Output")
 
-    if maskType == FACE_SKIN_ISOLATION:
+    if mask_type == FACE_SKIN_ISOLATION:
 
         for file in files_to_process:
 
@@ -170,20 +93,8 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
                 return -1
 
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked.mp4",
+            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked.mp4",
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
-            csv = None
-            
-            if extractColorInfo == True:
-                if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
-                    csv.write("Timestamp,Red,Green,Blue\n")
-                elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
-                    csv.write("Timestamp,Hue,Saturation,Value\n")
-                elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
-                    csv.write("Timestamp,Value\n")
             
             while True:
                 success, frame = capture.read()
@@ -270,35 +181,11 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
                 face_skin[white_mask == 255] = 0
 
                 result.write(face_skin)
-
-                # Extracting color values and writing to csv
-                if extractColorInfo == True:
-                    bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
-                    bin_mask[oval_mask] = 255
-                    bin_mask[le_mask] = 0
-                    bin_mask[re_mask] = 0
-                    bin_mask[lip_mask] = 0
-
-                    if colorSpace == COLOR_SPACE_RGB:
-                        blue, green, red, *_ = cv.mean(frame, bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
-
-                    elif colorSpace == COLOR_SPACE_HSV:
-                        hue, sat, val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{hue:.5f},{sat:.5f},{val:.5f}\n")
-                    
-                    elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                        val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{val:.5f}\n")
         
             capture.release()
             result.release()
-            csv.close()
     
-    elif maskType == FACE_OVAL:
+    elif mask_type == FACE_OVAL:
 
         for file in files_to_process:
 
@@ -310,20 +197,69 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
                 return -1
 
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(outputDirectory + "\\Video_Output\\" + filename + "_masked" + extension,
+            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked" + extension,
                                     cv.VideoWriter.fourcc(*'MP4V'), 30, size)
-            csv = None
+            
+            while True:
+                success, frame = capture.read()
+                if not success:
+                    break
 
-            if extractColorInfo == True:
-                if colorSpace == COLOR_SPACE_RGB:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_RGB.csv", "w")
-                    csv.write("Timestamp,Red,Green,Blue\n")
-                elif colorSpace == COLOR_SPACE_HSV:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_HSV.csv", "w")
-                    csv.write("Timestamp,Hue,Saturation,Value\n")
-                elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                    csv = open(outputDirectory + "\\CSV_Output\\" + filename + "_GRAYSCALE.csv", "w")
-                    csv.write("Timestamp,Value\n")
+                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+                landmark_screen_coords = []
+
+                if face_mesh_results.multi_face_landmarks:
+                    for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                        # Convert normalised landmark coordinates to x-y pixel coordinates
+                        for id,lm in enumerate(face_landmarks.landmark):
+                            ih, iw, ic = frame.shape
+                            x,y = int(lm.x * iw), int(lm.y * ih)
+                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+                else:
+                    continue
+
+                face_outline_coords = []
+                
+                # face oval screen coordinates
+                for cur_source, cur_target in FACE_OVAL_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    face_outline_coords.append((source.get('x'),source.get('y')))
+                    face_outline_coords.append((target.get('x'),target.get('y')))
+
+                oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+                oval_mask = oval_mask.astype(bool)
+
+                # Last step, masking out the bounding face shape
+                face_skin = np.zeros_like(frame)
+                face_skin[oval_mask] = frame[oval_mask] 
+
+                # Removing any face mesh artifacts
+                grey = cv.cvtColor(face_skin, cv.COLOR_BGR2GRAY)
+                white_mask = cv.inRange(grey, 220, 255)
+                face_skin[white_mask == 255] = 0
+
+                result.write(face_skin)
+        
+            capture.release()
+            result.release()
+    
+    elif mask_type == FACE_OVAL_TIGHT:
+
+        for file in files_to_process:
+
+            # Initializing capture and writer objects
+            filename, extension = os.path.splitext(file)
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened:
+                print("mask_face_region: Error opening videoCapture object.")
+                return -1
+
+            size = (int(capture.get(3)), int(capture.get(4)))
+            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked" + extension,
+                                    cv.VideoWriter.fourcc(*'MP4V'), 30, size)
             
             while True:
                 success, frame = capture.read()
@@ -367,138 +303,188 @@ def mask_face_region(inputDirectory:str, outputDirectory:str, maskType:int = FAC
                 face_skin[white_mask == 255] = 0
 
                 result.write(face_skin)
-
-                # Extracting color values and writing to csv
-                if extractColorInfo == True:
-                    bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
-                    bin_mask[oval_mask] = 255
-
-                    if colorSpace == COLOR_SPACE_RGB:
-                        blue, green, red, *_ = cv.mean(frame, bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
-
-                    elif colorSpace == COLOR_SPACE_HSV:
-                        hue, sat, val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{hue:.5f},{sat:.5f},{val:.5f}\n")
-                    
-                    elif colorSpace == COLOR_SPACE_GRAYSCALE:
-                        val, *_ = cv.mean(cv.cvtColor(frame, colorSpace), bin_mask)
-                        timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
-                        csv.write(f"{timestamp:.5f},{val:.5f}\n")
         
             capture.release()
             result.release()
-            csv.close()
 
-def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
-    """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
-        values of the focus color. 
-    
+def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, 
+                                with_sub_dirs:bool = False, mask_face:bool = True):
+    """Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory 
+    'CSV_Output', where a csv file will be written for each input video file provided.
+
         Args:
-            filePath: String
-                The path string of the location of the file to be processed.
+            input_dir: str
+                A path string to a directory containing the video files to be processed.
+
+            output_dir: str
+                A path string to a directory where outputted csv files will be written to.
             
-            focusColor: int | String
-                The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.
+            color_space: int | str
+                A specifier for which color space to operate in.
+            
+            with_sub_dirs: bool
+                Indicates whether the input directory contains subfolders
+            
+            mask_face: bool
+                Indicates whether to mask the face region prior to extracting color means.
         
         Raises:
             TypeError: given invalid parameter types.
-            ValueError: given a nonexisting file path, or a non RGB focus color.
-        
-        Returns:
-            min_color: ndarray[int]
-            max_color: ndarray[int]
+            ValueError: given an unrecognized color space.
+            OSError: input or output directories are invalid paths.
     """
-
-    global COLOR_RED
-    global COLOR_BLUE
-    global COLOR_GREEN
-
-    # Type and value checking before computation
-    if not isinstance(filePath, str):
-        raise TypeError("get_min_max_rgb: invalid type for filePath.")
-    elif not os.path.exists(filePath):
-        raise ValueError("get_min_max_rgb: filePath not a valid path.")
     
-    if isinstance(focusColor, str):
-        if str.lower(focusColor) not in ["red", "green", "blue"]:
-            raise ValueError("get_min_max_rgb: focusColor not a valid color option.")
-    elif isinstance(focusColor, int):
-        if focusColor not in [COLOR_RED, COLOR_BLUE, COLOR_GREEN]:
-            raise ValueError("get_min_max_rgb: focusColor not a valid color option.")
+    # Global declarations and init
+    global COLOR_SPACE_RGB
+    global COLOR_SPACE_HSV
+    global COLOR_SPACE_GRAYSCALE
+    global FACE_OVAL_TIGHT_PATH
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                                                min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
+    singleFile = False
+    files_to_process = []
+    capture = None
+    csv = None
+
+    # Type and value checking input parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("extract_color_channel_means: input_dir must be a path string.")
+    elif not os.path.exists(input_dir):
+        raise OSError("extract_color_channel_means: input_dir is not a valid path.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("extract_color_channel_means: output_dir must be a path string.")
+    elif not os.path.exists(output_dir):
+        raise OSError("extract_color_channel_means: output_dir is not a valid path.")
+    elif not os.path.isdir(output_dir):
+        raise OSError("extract_color_channel_means: output_dir must be a path string to a directory.")
+    
+    if not isinstance(color_space, int):
+        if not isinstance(color_space, str):
+            raise TypeError("extract_color_channel_means: color_space must be an int or str.")
+    if isinstance(color_space, str):
+        if str.lower(color_space) not in ["rgb", "hsv", "grayscale"]:
+            raise ValueError("extract_color_channel_means: unspecified color space.")
+        else:
+            if str.lower(color_space) == "rgb":
+                color_space = COLOR_SPACE_RGB
+            if str.lower(color_space) == "hsv":
+                color_space = COLOR_SPACE_HSV
+            if str.lower(color_space) == "grayscale":
+                color_space = COLOR_SPACE_GRAYSCALE
+
+    if isinstance(color_space, int):
+        if color_space not in [COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE]:
+            raise ValueError("extract_color_channel_means: unspecified color space.")
+    
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("extract_color_channel_means: with_sub_dirs must be a boolean.")
+
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+         files_to_process = os.listdir(input_dir)
     else:
-        raise TypeError("get_min_max_rgb: invalid type for focusColor.")
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    # create an output directory for the csv files
+    if not os.path.isdir(output_dir + "\\CSV_Output"):
+        os.mkdir(output_dir + "\\CSV_Output")
+        output_dir = os.path.join(output_dir, "\\CSV_Output")
+    
+    for file in files_to_process:
 
-    capture = cv.VideoCapture(filePath)
-    if not capture.isOpened():
-        print("get_min_max_rgb: Error opening videoCapture object.")
-        return -1
-
-    min_x, min_y, max_x, max_y, min_color, max_color = 0,0,0,0,None,None
-    min_val, max_val = 255, 0
-
+        # Initialize capture and writer objects
+        filename, extension = os.path.splitext(os.path.basename(file))
+        capture = cv.VideoCapture(file)
+        if not capture.isOpened():
+            print("extract_color_channel_means: Error opening videoCapture object.")
+            return -1
+        
+        # Writing the column headers to csv
+        if color_space == COLOR_SPACE_RGB:
+            csv = open(output_dir + "\\" + filename + "_RGB.csv", "w")
+            csv.write("Timestamp,Red,Green,Blue\n")
+        elif color_space == COLOR_SPACE_HSV:
+            csv = open(output_dir + "\\" + filename + "_HSV.csv", "w")
+            csv.write("Timestamp,Hue,Saturation,Value\n")
+        elif color_space == COLOR_SPACE_GRAYSCALE:
+            csv = open(output_dir + "\\" + filename + "_GRAYSCALE.csv", "w")
+            csv.write("Timestamp,Value\n")
+    
     while True:
-
         success, frame = capture.read()
         if not success:
             break
 
-        blue, green, red = cv.split(frame)
+        face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+        landmark_screen_coords = []
 
-        if focusColor == COLOR_RED or str.lower(focusColor) == "red":
-            max_y = np.where(red == red.max())[0][0]
-            max_x = np.where(red == red.max())[1][0]
-            cur_max_val = red[max_y, max_x]
+        if face_mesh_results.multi_face_landmarks:
+            for face_landmarks in face_mesh_results.multi_face_landmarks:
 
-            min_y = np.where(red == red.min())[0][0]
-            min_x = np.where(red == red.min())[1][0]
-            cur_min_val = red[min_y, min_x]
-
-            if cur_max_val > max_val:
-                max_val = cur_max_val
-                max_color = frame[max_y, max_x]
-
-            if cur_min_val < min_val:
-                min_val = cur_min_val
-                min_color = frame[min_y, min_x]
-
-        elif focusColor == COLOR_BLUE or str.lower(focusColor) == "blue":
-            max_y = np.where(blue == blue.max())[0][0]
-            max_x = np.where(blue == blue.max())[1][0]
-            cur_max_val = blue[max_y, max_x]
-
-            min_y = np.where(blue == blue.min())[0][0]
-            min_x = np.where(blue == blue.min())[1][0]
-            cur_min_val = blue[min_y, min_x]
-
-            if cur_max_val > max_val:
-                max_val = cur_max_val
-                max_color = frame[max_y, max_x]
-
-            if cur_min_val < min_val:
-                min_val = cur_min_val
-                min_color = frame[min_y, min_x]
-        
+                # Convert normalised landmark coordinates to x-y pixel coordinates
+                for id,lm in enumerate(face_landmarks.landmark):
+                    ih, iw, ic = frame.shape
+                    x,y = int(lm.x * iw), int(lm.y * ih)
+                    landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
         else:
-            max_y = np.where(green == green.max())[0][0]
-            max_x = np.where(green == green.max())[1][0]
-            cur_max_val = green[max_y, max_x]
+            continue
+        
+        if mask_face:
+            face_outline_coords = []
+            # Face oval screen coordinates
+            for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                face_outline_coords.append((source.get('x'),source.get('y')))
+                face_outline_coords.append((target.get('x'),target.get('y')))
+            
+            # Use screen coordinates to create boolean mask
+            oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
+            oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+            oval_mask = oval_mask.astype(bool)
 
-            min_y = np.where(green == green.min())[0][0]
-            min_x = np.where(green == green.min())[1][0]
-            cur_min_val = green[min_y, min_x]
+            bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+            bin_mask[oval_mask] = 255
 
-            if cur_max_val > max_val:
-                max_val = cur_max_val
-                max_color = frame[max_y, max_x]
+            if color_space == COLOR_SPACE_RGB:
+                blue, green, red, *_ = cv.mean(frame, bin_mask)
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
 
-            if cur_min_val < min_val:
-                min_val = cur_min_val
-                min_color = frame[min_y, min_x]
+            elif color_space == COLOR_SPACE_HSV:
+                hue, sat, val, *_ = cv.mean(cv.cvtColor(frame, color_space), bin_mask)
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{hue:.5f},{sat:.5f},{val:.5f}\n")
+            
+            elif color_space == COLOR_SPACE_GRAYSCALE:
+                val, *_ = cv.mean(cv.cvtColor(frame, color_space), bin_mask)
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{val:.5f}\n")
+
+        else:
+            if color_space == COLOR_SPACE_RGB:
+                blue, green, red, *_ = cv.mean(frame)
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{red:.5f},{green:.5f},{blue:.5f}\n")
+
+            elif color_space == COLOR_SPACE_HSV:
+                hue, sat, val, *_ = cv.mean(cv.cvtColor(frame, color_space))
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{hue:.5f},{sat:.5f},{val:.5f}\n")
+            
+            elif color_space == COLOR_SPACE_GRAYSCALE:
+                val, *_ = cv.mean(cv.cvtColor(frame, color_space))
+                timestamp = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+                csv.write(f"{timestamp:.5f},{val:.5f}\n")
     
-    return (min_color, max_color)
+    capture.release()
+    csv.close()
 
 def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float, sat_delta: float = 0.0, 
                 sat_only: bool = False, color: str|int = COLOR_RED, maxShift: float = 8.0) -> cv2.typing.MatLike:
@@ -514,7 +500,7 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
                 A binary image with the same shape as img.
 
             weight: float
-                The current color shifting weight; a float in the range [0,1]. 
+                The current shifting weight; a float in the range [0,1] returned from a timing function. 
             
             sat_delta: float
                 The units to shift the images saturation.

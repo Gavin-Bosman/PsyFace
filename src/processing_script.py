@@ -1,4 +1,4 @@
-import facial_isolation_module as fi
+import src.facial_manipulation as fi
 import numpy as np
 import os
 
