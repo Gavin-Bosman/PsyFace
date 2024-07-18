@@ -9,4 +9,4 @@ out_dir = os.getcwd()
 
 #TODO potentially reprocess colour data with cv.COLOR_BGR2HSV_FULL for full range of hue values
 
-fi.face_color_shift(inputDirectory=in_dir_2, outputDirectory=out_dir, onset=1.0, offset=3.5, maxShift= 10.0, filterColor="red")
+fi.face_color_shift(input_dir=in_dir_2, output_dir=out_dir, onset_t=1.0, offset_t=3.5, max_color_shift= 10.0, shift_color="red")

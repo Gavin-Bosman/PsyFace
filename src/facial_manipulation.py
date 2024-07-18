@@ -6,6 +6,7 @@ import pandas as pd
 import os
 from typing import Callable
 from utils import *
+#TODO face occlusion
 
 def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False) -> None:
     """Applies specified mask type to video files located in input_dir.
@@ -25,8 +26,9 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             Indicates if the input directory contains subfolders.
     
     Raises:
-        ValueError: given invalid pathstrings or an unknown mask type.
+        ValueError: given an unknown mask type.
         TypeError: given invalid parameter types.
+        OSError: given invalid path strings for in/output directories
     
     """
 
@@ -49,22 +51,22 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
 
     # Type and value checks for function parameters
     if not isinstance(input_dir, str):
-        raise TypeError("mask_face_region: invalid type for parameter inputDirectory.")
+        raise TypeError("Mask_face_region: invalid type for parameter inputDirectory.")
     elif not os.path.exists(input_dir):
-        raise ValueError("mask_face_region: input directory path is not a valid path, or the directory does not exist.")
+        raise OSError("Mask_face_region: input directory path is not a valid path, or the directory does not exist.")
     elif os.path.isfile(input_dir):
         singleFile = True
     
     if not isinstance(output_dir, str):
-        raise TypeError("mask_face_region: invalid type for parameter outputDirectory.")
+        raise TypeError("Mask_face_region: invalid type for parameter outputDirectory.")
     elif not os.path.exists(output_dir):
-        raise ValueError("mask_face_region: output directory path is not a valid path, or the directory does not exist.")
+        raise ValueError("Mask_face_region: output directory path is not a valid path, or the directory does not exist.")
     
     if mask_type not in MASK_OPTIONS:
-        raise ValueError("mask_face_region: maskType must be either 1: indicating FACE_OVAL, or 2: indicating FACE_SKIN_ISOLATION.")
+        raise ValueError("Mask_face_region: maskType must be either 1: indicating FACE_OVAL, or 2: indicating FACE_SKIN_ISOLATION.")
     
     if not isinstance(with_sub_dirs, bool):
-        raise TypeError("mask_face_region: invalid type for parameter withSubDirectories.")
+        raise TypeError("Mask_face_region: invalid type for parameter withSubDirectories.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
@@ -89,7 +91,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             if not capture.isOpened():
-                print("mask_face_region: Error opening videoCapture object.")
+                print("Mask_face_region: Error opening videoCapture object.")
                 return -1
 
             size = (int(capture.get(3)), int(capture.get(4)))
@@ -193,7 +195,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             filename, extension = os.path.splitext(file)
             capture = cv.VideoCapture(file)
             if not capture.isOpened:
-                print("mask_face_region: Error opening videoCapture object.")
+                print("Mask_face_region: Error opening videoCapture object.")
                 return -1
 
             size = (int(capture.get(3)), int(capture.get(4)))
@@ -348,25 +350,25 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
 
     # Type and value checking input parameters
     if not isinstance(input_dir, str):
-        raise TypeError("extract_color_channel_means: input_dir must be a path string.")
+        raise TypeError("Extract_color_channel_means: input_dir must be a path string.")
     elif not os.path.exists(input_dir):
-        raise OSError("extract_color_channel_means: input_dir is not a valid path.")
+        raise OSError("Extract_color_channel_means: input_dir is not a valid path.")
     elif os.path.isfile(input_dir):
         singleFile = True
     
     if not isinstance(output_dir, str):
-        raise TypeError("extract_color_channel_means: output_dir must be a path string.")
+        raise TypeError("Extract_color_channel_means: output_dir must be a path string.")
     elif not os.path.exists(output_dir):
-        raise OSError("extract_color_channel_means: output_dir is not a valid path.")
+        raise OSError("Extract_color_channel_means: output_dir is not a valid path.")
     elif not os.path.isdir(output_dir):
-        raise OSError("extract_color_channel_means: output_dir must be a path string to a directory.")
+        raise OSError("Extract_color_channel_means: output_dir must be a path string to a directory.")
     
     if not isinstance(color_space, int):
         if not isinstance(color_space, str):
-            raise TypeError("extract_color_channel_means: color_space must be an int or str.")
+            raise TypeError("Extract_color_channel_means: color_space must be an int or str.")
     if isinstance(color_space, str):
         if str.lower(color_space) not in ["rgb", "hsv", "grayscale"]:
-            raise ValueError("extract_color_channel_means: unspecified color space.")
+            raise ValueError("Extract_color_channel_means: unspecified color space.")
         else:
             if str.lower(color_space) == "rgb":
                 color_space = COLOR_SPACE_RGB
@@ -377,10 +379,10 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
 
     if isinstance(color_space, int):
         if color_space not in [COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE]:
-            raise ValueError("extract_color_channel_means: unspecified color space.")
+            raise ValueError("Extract_color_channel_means: unspecified color space.")
     
     if not isinstance(with_sub_dirs, bool):
-        raise TypeError("extract_color_channel_means: with_sub_dirs must be a boolean.")
+        raise TypeError("Extract_color_channel_means: with_sub_dirs must be a boolean.")
 
     if singleFile:
         files_to_process.append(input_dir)
@@ -402,7 +404,7 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
         filename, extension = os.path.splitext(os.path.basename(file))
         capture = cv.VideoCapture(file)
         if not capture.isOpened():
-            print("extract_color_channel_means: Error opening videoCapture object.")
+            print("Extract_color_channel_means: Error opening videoCapture object.")
             return -1
         
         # Writing the column headers to csv
@@ -486,33 +488,34 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     capture.release()
     csv.close()
 
-def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float, sat_delta: float = 0.0, 
-                sat_only: bool = False, color: str|int = COLOR_RED, maxShift: float = 8.0) -> cv2.typing.MatLike:
-    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by weight units in the masked
-        region of the image. This function makes use of the CIE Lab perceptually uniform color space to perform natural looking
+# TODO rework color shifting functions, better naming conventions for variables
+def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | None, shift_weight: float, max_color_shift: float = 8.0, 
+                    max_sat_shift: float = 0.0, shift_color: str|int = COLOR_RED, sat_only: bool = False) -> cv2.typing.MatLike:
+    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) units in 
+        the masked region of the image. This function makes use of the CIE Lab* perceptually uniform color space to perform natural looking
         color shifts on the face.
 
         Args:
             img: Matlike
                 An input still image or video frame.
 
-            mask: Matlike
+            img_mask: Matlike
                 A binary image with the same shape as img.
 
-            weight: float
+            shift_weight: float
                 The current shifting weight; a float in the range [0,1] returned from a timing function. 
-            
-            sat_delta: float
-                The units to shift the images saturation.
-            
-            sat_only: bool
-                A specifier that indicates if only the saturation is being modified.
 
-            color: str | int
+            max_color_shift: float
+                The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.
+            
+            max_sat_shift: float
+                The maximum units to shift the images saturation by.
+            
+            shift_color: str | int
                 An integer or string literal specifying which color will be applied to the input image.
 
-            maxShift: float
-                The maximum units to shift the colour temperature by, during peak onset.
+            sat_only: bool
+                A specifier that indicates if only the saturation is being modified.
             
         Raises:
             TypeError: on invalid input parameter types.
@@ -531,28 +534,27 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
     
     # Type checking input parameters
     if not isinstance(img, cv2.typing.MatLike):
-        raise TypeError("color_shift: parameter img must be a Matlike.")
-    if not isinstance(mask, cv2.typing.MatLike):
-        raise TypeError("color_shift: parameter mask must be a Matlike.")
-    if img.shape[:2] != mask.shape[:2]:
-        raise ValueError("color_shift: image and mask have different shapes.")
+        raise TypeError("Color_shift: parameter img must be a Matlike.")
+    if not isinstance(img_mask, cv2.typing.MatLike):
+        raise TypeError("Color_shift: parameter mask must be a Matlike.")
+    if img.shape[:2] != img_mask.shape[:2]:
+        raise ValueError("Color_shift: image and mask have different shapes.")
     
-    if not isinstance(weight, float):
-        raise TypeError("color_shift: parameter weight must be of type float.")
-    if not isinstance(sat_delta, float):
-        raise TypeError("color_shift: parameter sat_delta must be of type float.")
+    if not isinstance(shift_weight, float):
+        raise TypeError("Color_shift: parameter weight must be of type float.")
+    if not isinstance(max_color_shift, float):
+        raise TypeError("Color_shift: parameter maxShift must be of type float.")
+    if not isinstance(max_sat_shift, float):
+        raise TypeError("Color_shift: parameter sat_delta must be of type float.")
     
-    if isinstance(color, str):
-        if str.lower(color) not in ["red", "green", "blue", "yellow"]:
-            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
-    elif isinstance(color, int):
-        if color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
-            raise ValueError("color_shift: color must be one of: red, green, blue, yellow.")
+    if isinstance(shift_color, str):
+        if str.lower(shift_color) not in ["red", "green", "blue", "yellow"]:
+            raise ValueError("Color_shift: color must be one of: red, green, blue, yellow.")
+    elif isinstance(shift_color, int):
+        if shift_color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
+            raise ValueError("Color_shift: color must be one of: red, green, blue, yellow.")
     else:
-        raise TypeError("color_shift: parameter color must be of type str or int.")
-    
-    if not isinstance(maxShift, float):
-        raise TypeError("color_shift: parameter maxShift must be of type float.")
+        raise TypeError("Color_shift: parameter color must be of type str or int.")
     
     result = None
 
@@ -560,10 +562,10 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
 
         img_LAB = None
 
-        if sat_delta != 0.0:
+        if max_sat_shift != 0.0:
             img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
             h,s,v = cv.split(img_hsv)
-            s = np.where(mask == 255, s + (weight * sat_delta), s)
+            s = np.where(img_mask == 255, s + (shift_weight * max_sat_shift), s)
             np.clip(s,0,255)
             img_hsv = cv.merge([h,s,v])
 
@@ -573,17 +575,17 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
         img_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB).astype(np.float32)
         l,a,b = cv.split(img_LAB)
 
-        if color == COLOR_RED or str.lower(color) == "red":
-            a = np.where(mask==255, a + (weight * maxShift), a)
+        if shift_color == COLOR_RED or str.lower(shift_color) == "red":
+            a = np.where(img_mask==255, a + (shift_weight * max_color_shift), a)
             np.clip(a, -128, 127)
-        if color == COLOR_BLUE or str.lower(color) == "blue":
-            b = np.where(mask==255, b - (weight * maxShift), b)
+        if shift_color == COLOR_BLUE or str.lower(shift_color) == "blue":
+            b = np.where(img_mask==255, b - (shift_weight * max_color_shift), b)
             np.clip(a, -128, 127)
-        if color == COLOR_GREEN or str.lower(color) == "green":
-            a = np.where(mask==255, a - (weight * maxShift), a)
+        if shift_color == COLOR_GREEN or str.lower(shift_color) == "green":
+            a = np.where(img_mask==255, a - (shift_weight * max_color_shift), a)
             np.clip(a, -128, 127)
-        if color == COLOR_YELLOW or str.lower(color) == "yellow":
-            b = np.where(mask==255, b + (weight * maxShift), b)
+        if shift_color == COLOR_YELLOW or str.lower(shift_color) == "yellow":
+            b = np.where(img_mask==255, b + (shift_weight * max_color_shift), b)
             np.clip(a, -128, 127)
         
         img_LAB = cv.merge([l,a,b])
@@ -591,10 +593,10 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
         # Convert CIE La*b* back to BGR
         result = cv.cvtColor(img_LAB.astype(np.uint8), cv.COLOR_LAB2BGR)
         
-    elif sat_delta != 0.0:
+    elif max_sat_shift != 0.0:
         img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
         h,s,v = cv.split(img_hsv)
-        s = np.where(mask == 255, s + (weight * sat_delta), s)
+        s = np.where(img_mask == 255, s + (shift_weight * max_sat_shift), s)
         np.clip(s,0,255)
         img_hsv = cv.merge([h,s,v])
 
@@ -602,42 +604,44 @@ def color_shift(img: cv2.typing.MatLike, mask: cv2.typing.MatLike, weight: float
 
     return result
 
-def face_color_shift(inputDirectory:str, outputDirectory:str, onset:float, offset:float, maxShift: float = 8.0, sat_delta: float = 0.0,
-                     timingFunc:Callable[...,float] = sigmoid, filterColor:str|int = COLOR_RED, withSubDirectories:bool = False) -> None: 
-    """Takes in one or more videos contaned in inputDirectory, and applies a specified colour filter to the facial skin
-        region. The resulting videos are output to outputDirectory.
+def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:float, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
+                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False) -> None: 
+    """For each video file contained in input_dir, the function applies a weighted color shift to the face region, outputting 
+    each resulting video to output_dir. Weights are calculated using a passed timing function, that returns a float in the normalised
+    range [0,1]. (NOTE there is currently no checking to ensure timing function outputs are normalised)
 
         Args:
-            inputDirectory: String
+            input_dir: String
                 A path string to the directory containing input video files.
 
-            outputDirectory: String
+            output_dir: String
                 A path string to the directory where outputted video files will be saved.
             
-            onset: float
-                The onset time of the colour filtering.
+            onset_t: float
+                The onset time of the colour shifting.
             
-            offset: float
-                The offset time of the colour filtering.
+            offset_t: float
+                The offset time of the colour shifting.
             
-            maxShift: float
+            max_color_shift: float
                 The maximum units to shift the colour temperature by, during peak onset.
             
-            sat_delta: float
-                The units to shift the images saturation.
+            max_sat_shift: float
+                The maximum units to shift the images saturation by, during peak onset.
             
             timingFunc: Function() -> float
                 Any function that takes at least one input float (time), and returns a float.
 
-            filterColor: String | int
+            shift_color: String | int
                 Either a string literal specifying the color of choice, or a predefined integer constant.
             
-            withSubDirectories: bool
+            with_sub_dirs: bool
                 A boolean value indicating whether the input directory contains nested directories.
         
         Throws:
             TypeError: given invalid parameter types.
-            ValueError: given invalid directory paths, or alpha value outside the range [0,1].
+            OSError: given invalid directory paths.
+            ValueError: if timing_func does not return a float value.
     """
 
     global FACE_OVAL_PATH
@@ -653,56 +657,56 @@ def face_color_shift(inputDirectory:str, outputDirectory:str, onset:float, offse
     singleFile = False
     
     # Performing checks on function parameters
-    if not isinstance(inputDirectory, str):
-        raise TypeError("face_color_shift: invalid type for parameter inputDirectory.")
-    elif not os.path.exists(inputDirectory):
-        raise ValueError("face_color_shift: input directory path is not a valid path, or the directory does not exist.")
-    elif os.path.isfile(inputDirectory):
+    if not isinstance(input_dir, str):
+        raise TypeError("Face_color_shift: invalid type for parameter inputDirectory.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Face_color_shift: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
         singleFile = True
     
-    if not isinstance(outputDirectory, str):
-        raise TypeError("face_color_shift: invalid type for parameter outputDirectory.")
-    elif not os.path.exists(outputDirectory):
-        raise ValueError("face_color_shift: output directory path is not a valid path, or the directory does not exist.")
-    elif not os.path.isdir(outputDirectory):
+    if not isinstance(output_dir, str):
+        raise TypeError("Face_color_shift: invalid type for parameter outputDirectory.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Face_color_shift: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(output_dir):
         raise ValueError("Face_color_shift: outputDirectory must be a valid path to a directory.")
     
-    if not isinstance(onset, float):
-        raise TypeError("face_color_shift: parameter onset must be a float.")
-    if not isinstance(offset, float):
-        raise TypeError("face_color_shift: parameter offset must be a float.")
-    if not isinstance(maxShift, float):
-        raise TypeError("face_color_shift: parameter maxShift must be a float.")
-    if not isinstance(sat_delta, float):
-        raise TypeError("face_color_shift: parameter sat_delta must be a float.")
+    if not isinstance(onset_t, float):
+        raise TypeError("Face_color_shift: parameter onset must be a float.")
+    if not isinstance(offset_t, float):
+        raise TypeError("Face_color_shift: parameter offset must be a float.")
+    if not isinstance(max_color_shift, float):
+        raise TypeError("Face_color_shift: parameter maxShift must be a float.")
+    if not isinstance(max_sat_shift, float):
+        raise TypeError("Face_color_shift: parameter sat_delta must be a float.")
     
-    if isinstance(timingFunc, Callable):
-        if not isinstance(timingFunc(1.0), float):
-            raise ValueError("face_color_shift: timingFunc must return a float value.")
+    if isinstance(timing_func, Callable):
+        if not isinstance(timing_func(1.0), float):
+            raise ValueError("Face_color_shift: timingFunc must return a float value.")
     # add check for return value in range [0,1]
 
-    if isinstance(filterColor, str):
-        if str.lower(filterColor) not in ["red", "green", "blue", "yellow"]:
+    if isinstance(shift_color, str):
+        if str.lower(shift_color) not in ["red", "green", "blue", "yellow"]:
             raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
-    elif isinstance(filterColor, int):
-        if filterColor not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
+    elif isinstance(shift_color, int):
+        if shift_color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
             raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
     else:
         raise TypeError("Face_color_shift: color must be of type str or int.")
 
-    if not isinstance(withSubDirectories, bool):
+    if not isinstance(with_sub_dirs, bool):
         raise TypeError("Face_color_shift: invalid type for parameter withSubDirectories.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
 
     if singleFile:
-        files_to_process.append(inputDirectory)
-    elif not withSubDirectories:
-         files_to_process = os.listdir(inputDirectory)
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+         files_to_process = os.listdir(input_dir)
     else:
         files_to_process = [os.path.join(path, file) 
-                            for path, dirs, files in os.walk(inputDirectory, topdown=True) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
                             for file in files]
     
     for file in files_to_process:
@@ -711,16 +715,15 @@ def face_color_shift(inputDirectory:str, outputDirectory:str, onset:float, offse
         filename, extension = os.path.splitext(os.path.basename(file))
         capture = cv.VideoCapture(file)
         if not capture.isOpened():
-            print("face_color_shift: Error opening video file.")
+            print("Face_color_shift: Error opening video file.")
             return -1
 
         size = (int(capture.get(3)), int(capture.get(4)))
-        result = cv.VideoWriter(outputDirectory + "\\" + filename + "_color_filter.mp4",
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_color_filter.mp4",
                                 cv.VideoWriter.fourcc(*'MP4V'), 30, size)
         frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
         fps = capture.get(cv.CAP_PROP_FPS)
         cap_duration = float(frame_count)/float(fps)
-        print("Duration: ", cap_duration)
             
         while True:
 
@@ -807,16 +810,16 @@ def face_color_shift(inputDirectory:str, outputDirectory:str, onset:float, offse
 
             dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
             
-            if dt < onset:
+            if dt < onset_t:
                 result.write(frame)
-            elif dt < offset:
-                weight = timingFunc(dt)
-                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor, maxShift=maxShift, sat_delta=sat_delta)
+            elif dt < offset_t:
+                weight = timing_func(dt)
+                frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
                 result.write(frame_coloured)
             else:
                 dt = cap_duration - dt
-                weight = timingFunc(dt)
-                frame_coloured = color_shift(img=frame, mask=face_mask, weight=weight, color=filterColor, maxShift=maxShift, sat_delta=sat_delta)
+                weight = timing_func(dt)
+                frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
                 result.write(frame_coloured)
 
         capture.release()
