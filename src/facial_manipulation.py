@@ -4,6 +4,7 @@ import mediapipe as mp
 import numpy as np
 import pandas as pd
 import os
+from ffprobe import FFProbe
 from typing import Callable
 from utils import *
 #TODO face occlusion
@@ -79,9 +80,10 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                             for path, dirs, files in os.walk(input_dir, topdown=True) 
                             for file in files]
     
-    # Creating named output directories for video and csv output
+    # Creating named output directories for video output
     if not os.path.isdir(output_dir + "\\Video_Output"):
         os.mkdir(output_dir + "\\Video_Output")
+        output_dir = output_dir + "\\Video_Output"
 
     if mask_type == FACE_SKIN_ISOLATION:
 
@@ -91,12 +93,23 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             if not capture.isOpened():
-                print("Mask_face_region: Error opening videoCapture object.")
+                print("Mask_face_region: Error opening VideoCapture object.")
                 return -1
 
+            metaData = FFProbe(file)
+            codec = None
+
+            # Sniffing input file codec
+            for stream in metaData.streams:
+                if stream.is_video():
+                    codec = stream.codec()
+            
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked.mp4",
-                                    cv.VideoWriter.fourcc(*'MP4V'), 30, size)
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Mask_face_region: Error opening VideoWriter object.")
+                return -1
             
             while True:
                 success, frame = capture.read()
@@ -198,9 +211,20 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 print("Mask_face_region: Error opening videoCapture object.")
                 return -1
 
+            metaData = FFProbe(file)
+            codec = None
+
+            # Sniffing input file codec
+            for stream in metaData.streams:
+                if stream.is_video():
+                    codec = stream.codec()
+            
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked" + extension,
-                                    cv.VideoWriter.fourcc(*'MP4V'), 30, size)
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Mask_face_region: Error opening VideoWriter object.")
+                return -1
             
             while True:
                 success, frame = capture.read()
@@ -259,9 +283,20 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 print("mask_face_region: Error opening videoCapture object.")
                 return -1
 
+            metaData = FFProbe(file)
+            codec = None
+
+            # Sniffing input file codec
+            for stream in metaData.streams:
+                if stream.is_video():
+                    codec = stream.codec()
+            
             size = (int(capture.get(3)), int(capture.get(4)))
-            result = cv.VideoWriter(output_dir + "\\Video_Output\\" + filename + "_masked" + extension,
-                                    cv.VideoWriter.fourcc(*'MP4V'), 30, size)
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Mask_face_region: Error opening VideoWriter object.")
+                return -1
             
             while True:
                 success, frame = capture.read()
@@ -515,7 +550,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
                 An integer or string literal specifying which color will be applied to the input image.
 
             sat_only: bool
-                A specifier that indicates if only the saturation is being modified.
+                A boolean flag that indicates if only the saturation is being modified.
             
         Raises:
             TypeError: on invalid input parameter types.
@@ -605,7 +640,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
     return result
 
 def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:float, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
-                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False) -> None: 
+                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False) -> None: 
     """For each video file contained in input_dir, the function applies a weighted color shift to the face region, outputting 
     each resulting video to output_dir. Weights are calculated using a passed timing function, that returns a float in the normalised
     range [0,1]. (NOTE there is currently no checking to ensure timing function outputs are normalised)
@@ -636,7 +671,10 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
                 Either a string literal specifying the color of choice, or a predefined integer constant.
             
             with_sub_dirs: bool
-                A boolean value indicating whether the input directory contains nested directories.
+                A boolean flag indicating whether the input directory contains nested directories.
+            
+            sat_only: bool
+                A boolean flag indicating if only the saturation of the input file will be shifted.
         
         Throws:
             TypeError: given invalid parameter types.
@@ -665,37 +703,40 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
         singleFile = True
     
     if not isinstance(output_dir, str):
-        raise TypeError("Face_color_shift: invalid type for parameter outputDirectory.")
+        raise TypeError("Face_color_shift: parameter output_dir must be a str.")
     elif not os.path.exists(output_dir):
         raise OSError("Face_color_shift: output directory path is not a valid path, or the directory does not exist.")
     elif not os.path.isdir(output_dir):
-        raise ValueError("Face_color_shift: outputDirectory must be a valid path to a directory.")
+        raise ValueError("Face_color_shift: output_dir must be a valid path to a directory.")
     
     if not isinstance(onset_t, float):
-        raise TypeError("Face_color_shift: parameter onset must be a float.")
+        raise TypeError("Face_color_shift: parameter onset_t must be a float.")
     if not isinstance(offset_t, float):
-        raise TypeError("Face_color_shift: parameter offset must be a float.")
+        raise TypeError("Face_color_shift: parameter offset_t must be a float.")
     if not isinstance(max_color_shift, float):
-        raise TypeError("Face_color_shift: parameter maxShift must be a float.")
+        raise TypeError("Face_color_shift: parameter max_color_shift must be a float.")
     if not isinstance(max_sat_shift, float):
         raise TypeError("Face_color_shift: parameter sat_delta must be a float.")
     
     if isinstance(timing_func, Callable):
         if not isinstance(timing_func(1.0), float):
-            raise ValueError("Face_color_shift: timingFunc must return a float value.")
+            raise ValueError("Face_color_shift: timing_func must return a float value.")
     # add check for return value in range [0,1]
 
     if isinstance(shift_color, str):
         if str.lower(shift_color) not in ["red", "green", "blue", "yellow"]:
-            raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_shift: shift_color must be one of: red, green, blue, yellow.")
     elif isinstance(shift_color, int):
         if shift_color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
-            raise ValueError("Face_color_shift: color must be one of: red, green, blue, yellow.")
+            raise ValueError("Face_color_shift: shift_color must be one of: red, green, blue, yellow.")
     else:
-        raise TypeError("Face_color_shift: color must be of type str or int.")
+        raise TypeError("Face_color_shift: shift_color must be of type str or int.")
 
     if not isinstance(with_sub_dirs, bool):
-        raise TypeError("Face_color_shift: invalid type for parameter withSubDirectories.")
+        raise TypeError("Face_color_shift: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(sat_only, bool):
+        raise TypeError("Face_color_shift: parameter sat_only must be of type bool.")
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
@@ -717,10 +758,23 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
         if not capture.isOpened():
             print("Face_color_shift: Error opening video file.")
             return -1
+        
+        metaData = FFProbe(file)
+        codec = None
 
+        # Sniffing input file codec
+        for stream in metaData.streams:
+            if stream.is_video():
+                codec = stream.codec()
+        
         size = (int(capture.get(3)), int(capture.get(4)))
-        result = cv.VideoWriter(output_dir + "\\" + filename + "_color_filter.mp4",
-                                cv.VideoWriter.fourcc(*'MP4V'), 30, size)
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
+                                cv.VideoWriter.fourcc(*codec), 30, size)
+        if not result.isOpened():
+            print("Mask_face_region: Error opening VideoWriter object.")
+            return -1
+
+        # Getting the video duration for weight calculations
         frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
         fps = capture.get(cv.CAP_PROP_FPS)
         cap_duration = float(frame_count)/float(fps)
@@ -797,7 +851,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
             oval_mask = oval_mask.astype(bool)
 
             # Isolating overall face skin for colouring
-            face_mask = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            face_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
             face_mask[oval_mask] = 255
             face_mask[le_mask] = 0
             face_mask[re_mask] = 0
@@ -810,17 +864,30 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
 
             dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
             
-            if dt < onset_t:
-                result.write(frame)
-            elif dt < offset_t:
-                weight = timing_func(dt)
-                frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
-                result.write(frame_coloured)
+            if sat_only:
+                if dt < onset_t:
+                    result.write(frame)
+                elif dt < offset_t:
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
+                    result.write(frame_coloured)
+                else:
+                    dt = cap_duration - dt
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True) 
+                    result.write(frame_coloured)
             else:
-                dt = cap_duration - dt
-                weight = timing_func(dt)
-                frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
-                result.write(frame_coloured)
+                if dt < onset_t:
+                    result.write(frame)
+                elif dt < offset_t:
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    result.write(frame_coloured)
+                else:
+                    dt = cap_duration - dt
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    result.write(frame_coloured)
 
         capture.release()
         result.release()
