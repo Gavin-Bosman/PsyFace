@@ -2,6 +2,7 @@ import cv2 as cv
 import pandas as pd
 import numpy as np
 import os
+import sys
 
 # Defining pertinent facemesh landmark sets
 LEFT_EYE_BROW_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
@@ -180,6 +181,61 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
                 min_color = frame[min_y, min_x]
     
     return (min_color, max_color)
+
+def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = False) -> None:
+
+    # Type checking input parameters
+    singleFile = False
+    if not isinstance(input_dir, str):
+        raise TypeError("Transcode_video: parameter input_dir must be of type str.")
+    if not os.path.exists(input_dir):
+        raise OSError("Transcode_video: parameter input_dir must be a valid path string.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+
+    if not isinstance(output_dir, str):
+        raise TypeError("Transcode_video: parameter output_dir must be of type str.")
+    if not os.path.exists(output_dir):
+        raise OSError("Transcode_video: parameter output_dir must be a valid path string.")
+    
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Transcode_video: parameter with_sub_dirs must be of type bool.")
+
+    files_to_process = []
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+         files_to_process = os.listdir(input_dir)
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    for file in files_to_process:
+        # Initialize capture and writer objects
+        filename, extension = os.path.splitext(os.path.basename(file))
+        capture = cv.VideoCapture(file)
+        if not capture.isOpened():
+            print("Transcode_video: Error opening VideoCapture object.")
+            sys.exit(1)
+        
+        size = (int(capture.get(3)), int(capture.get(4)))
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_transcoded.mp4",
+                                cv.VideoWriter.fourcc(*'H264'), 30, size)
+        if not result.isOpened():
+            print("Transcode_video: Error opening VideoWriter object.")
+            sys.exit(1)
+        
+        while True:
+            success, frame = capture.read()
+            if not success:
+                break
+
+            result.write(frame)
+
+        capture.release()
+        result.release()
+
 
 # Defining useful timing functions
 def sigmoid(x:float, k:float = 1.0) -> float:

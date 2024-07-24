@@ -4,7 +4,7 @@ import mediapipe as mp
 import numpy as np
 import pandas as pd
 import os
-from ffprobe import FFProbe
+import sys
 from typing import Callable
 from utils import *
 #TODO face occlusion
@@ -81,9 +81,9 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                             for file in files]
     
     # Creating named output directories for video output
-    if not os.path.isdir(output_dir + "\\Video_Output"):
-        os.mkdir(output_dir + "\\Video_Output")
-        output_dir = output_dir + "\\Video_Output"
+    if not os.path.isdir(output_dir + "\\Masked_Videos"):
+        os.mkdir(output_dir + "\\Masked_Videos")
+    output_dir = output_dir + "\\Masked_Videos"
 
     if mask_type == FACE_SKIN_ISOLATION:
 
@@ -94,22 +94,25 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             capture = cv.VideoCapture(file)
             if not capture.isOpened():
                 print("Mask_face_region: Error opening VideoCapture object.")
-                return -1
-
-            metaData = FFProbe(file)
+                sys.exit(1)
+                 
             codec = None
 
-            # Sniffing input file codec
-            for stream in metaData.streams:
-                if stream.is_video():
-                    codec = stream.codec()
+            match extension:
+                case ".mp4":
+                    codec = "H264"
+                case ".mov":
+                    codec = "H264"
+                case _:
+                    print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
+                    sys.exit(1)
             
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
                                     cv.VideoWriter.fourcc(*codec), 30, size)
             if not result.isOpened():
                 print("Mask_face_region: Error opening VideoWriter object.")
-                return -1
+                sys.exit(1)
             
             while True:
                 success, frame = capture.read()
@@ -187,7 +190,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 masked_frame[lip_mask] = 0
 
                 # Last step, masking out the bounding face shape
-                face_skin = np.zeros_like(masked_frame)
+                face_skin = np.zeros_like(masked_frame, dtype=np.uint8)
                 face_skin[oval_mask] = masked_frame[oval_mask] 
 
                 # Removing any face mesh artifacts
@@ -211,13 +214,16 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 print("Mask_face_region: Error opening videoCapture object.")
                 return -1
 
-            metaData = FFProbe(file)
             codec = None
 
-            # Sniffing input file codec
-            for stream in metaData.streams:
-                if stream.is_video():
-                    codec = stream.codec()
+            match extension:
+                case ".mp4":
+                    codec = "H264"
+                case ".mov":
+                    codec = "H264"
+                case _:
+                    print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
+                    sys.exit(1)
             
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
@@ -283,13 +289,16 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 print("mask_face_region: Error opening videoCapture object.")
                 return -1
 
-            metaData = FFProbe(file)
             codec = None
 
-            # Sniffing input file codec
-            for stream in metaData.streams:
-                if stream.is_video():
-                    codec = stream.codec()
+            match extension:
+                case ".mp4":
+                    codec = "H264"
+                case ".mov":
+                    codec = "H264"
+                case _:
+                    print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
+                    sys.exit(1)
             
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
@@ -345,7 +354,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             result.release()
 
 def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, 
-                                with_sub_dirs:bool = False, mask_face:bool = True):
+                                with_sub_dirs:bool = False, mask_face:bool = True) -> None:
     """Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory 
     'CSV_Output', where a csv file will be written for each input video file provided.
 
@@ -429,9 +438,9 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
                             for file in files]
     
     # create an output directory for the csv files
-    if not os.path.isdir(output_dir + "\\CSV_Output"):
-        os.mkdir(output_dir + "\\CSV_Output")
-        output_dir = os.path.join(output_dir, "\\CSV_Output")
+    if not os.path.isdir(output_dir + "\\Color_Channel_Means"):
+        os.mkdir(output_dir + "\\Color_Channel_Means")
+    output_dir = os.path.join(output_dir, "\\Color_Channel_Means")
     
     for file in files_to_process:
 
@@ -523,7 +532,6 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     capture.release()
     csv.close()
 
-# TODO rework color shifting functions, better naming conventions for variables
 def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | None, shift_weight: float, max_color_shift: float = 8.0, 
                     max_sat_shift: float = 0.0, shift_color: str|int = COLOR_RED, sat_only: bool = False) -> cv2.typing.MatLike:
     """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) units in 
@@ -750,6 +758,12 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
                             for path, dirs, files in os.walk(input_dir, topdown=True) 
                             for file in files]
     
+    # Creating named output directories for video output
+    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
+        os.mkdir(output_dir + "\\Color_Shifted_Videos")
+
+    output_dir = output_dir + "\\Color_Shifted_Videos"
+    
     for file in files_to_process:
             
         # Initialize capture and writer objects
@@ -757,15 +771,18 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
         capture = cv.VideoCapture(file)
         if not capture.isOpened():
             print("Face_color_shift: Error opening video file.")
-            return -1
+            sys.exit(1)
         
-        metaData = FFProbe(file)
         codec = None
 
-        # Sniffing input file codec
-        for stream in metaData.streams:
-            if stream.is_video():
-                codec = stream.codec()
+        match extension:
+            case ".mp4":
+                codec = "H264"
+            case ".mov":
+                codec = "H264"
+            case _:
+                print("Face_color_shift: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
+                sys.exit(1)
         
         size = (int(capture.get(3)), int(capture.get(4)))
         result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
@@ -853,14 +870,25 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
             # Isolating overall face skin for colouring
             face_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
             face_mask[oval_mask] = 255
+
+            # Eroding the face oval to remove background artifacts
+            kernel = cv.getStructuringElement(cv.MORPH_RECT, (5,5))
+            face_mask = cv.morphologyEx(face_mask, cv.MORPH_ERODE, kernel)
+
+            # Masking out eyes and lips
             face_mask[le_mask] = 0
             face_mask[re_mask] = 0
             face_mask[lip_mask] = 0
-
+                        
             # Cleaning up mask with morphological operations
-            kernel = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_OPEN, kernel)
             face_mask = cv.morphologyEx(face_mask, cv.MORPH_CLOSE, kernel)
+
+            # Shaving any remaining background artifacts with thresholds
+            f = np.zeros_like(frame, dtype=np.uint8)
+            f[face_mask == 255] = frame[face_mask == 255]
+            white_mask = cv.inRange(cv.cvtColor(f, cv.COLOR_BGR2GRAY), 220, 255)
+            face_mask[white_mask == 255] = 0
 
             dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
             
