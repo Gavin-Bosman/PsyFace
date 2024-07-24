@@ -286,7 +286,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             filename, extension = os.path.splitext(file)
             capture = cv.VideoCapture(file)
             if not capture.isOpened:
-                print("mask_face_region: Error opening videoCapture object.")
+                print("Mask_face_region: Error opening videoCapture object.")
                 return -1
 
             codec = None
@@ -645,6 +645,11 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 
         result = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
 
+    # Cleaning up any background artifacts from changing color spaces
+    grey = cv.cvtColor(result, cv.COLOR_BGR2GRAY)
+    white_mask = cv.inRange(grey, 220, 255)
+    result[white_mask == 255] = 255
+
     return result
 
 def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:float, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
@@ -785,10 +790,10 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
                 sys.exit(1)
         
         size = (int(capture.get(3)), int(capture.get(4)))
-        result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_color_shifted" + extension,
                                 cv.VideoWriter.fourcc(*codec), 30, size)
         if not result.isOpened():
-            print("Mask_face_region: Error opening VideoWriter object.")
+            print("Face_color_shift: Error opening VideoWriter object.")
             return -1
 
         # Getting the video duration for weight calculations
