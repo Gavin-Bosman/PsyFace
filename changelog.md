@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 - v0.3 occlude_face_region
 - v0.3 test cases
 
+## [0.2.2] - 2024-07-31
+
+### Added
+
+### Changed
+
+- Changed mp4 video codec from h264 to cv2 supported mp4v.
+- Mask_face_region and face_color_shift now take confidence parameters for the underlying mediapipe face landmarker model.
+- Implemented otsu thresholding to isolate foreground to use as a mask. This foreground mask ensures that no background 
+artifacts are present in the facial color shifting, or facial masking. 
+- Added documentation for new funtion parameters.
+
+### Removed
+
 ## [0.2.1] - 2024-07-24
 
 ### Added

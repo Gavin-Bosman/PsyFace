@@ -7,9 +7,9 @@ import os
 import sys
 from typing import Callable
 from utils import *
-#TODO face occlusion
 
-def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False) -> None:
+def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
+                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
     """Applies specified mask type to video files located in input_dir.
 
     Args:
@@ -23,8 +23,20 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             An integer indicating the type of mask to apply to the input videos. This can be one of two options:
             either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.
 
-        with_sub_dirs: Boolean, 
+        with_sub_dirs: Boolean 
             Indicates if the input directory contains subfolders.
+
+        min_detection_confidence: Float
+            A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+            FaceMesh constructor.
+        
+        min_tracking_confidence: Float
+            A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+            FaceMesh constructor.
+        
+        static_image_mode: Boolean
+            A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+            video frames.
     
     Raises:
         ValueError: given an unknown mask type.
@@ -46,28 +58,43 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
     global COLOR_SPACE_HSV
     global COLOR_SPACE_GRAYSCALE
     global COLOR_SPACES
-    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
-                                                min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
-    singleFile = False
 
     # Type and value checks for function parameters
     if not isinstance(input_dir, str):
-        raise TypeError("Mask_face_region: invalid type for parameter inputDirectory.")
+        raise TypeError("Mask_face_region: parameter input_dir must be of type str.")
     elif not os.path.exists(input_dir):
         raise OSError("Mask_face_region: input directory path is not a valid path, or the directory does not exist.")
     elif os.path.isfile(input_dir):
         singleFile = True
     
     if not isinstance(output_dir, str):
-        raise TypeError("Mask_face_region: invalid type for parameter outputDirectory.")
+        raise TypeError("Mask_face_region: parameter output_dir must be of type str.")
     elif not os.path.exists(output_dir):
         raise ValueError("Mask_face_region: output directory path is not a valid path, or the directory does not exist.")
     
     if mask_type not in MASK_OPTIONS:
-        raise ValueError("Mask_face_region: maskType must be either 1: indicating FACE_OVAL, or 2: indicating FACE_SKIN_ISOLATION.")
+        raise ValueError("Mask_face_region: mask_type must be either 1: indicating FACE_OVAL, 2: indicating FACE_OVAL_TIGHT, or 3: indicating FACE_SKIN_ISOLATION.")
     
     if not isinstance(with_sub_dirs, bool):
-        raise TypeError("Mask_face_region: invalid type for parameter withSubDirectories.")
+        raise TypeError("Mask_face_region: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    if not isinstance(static_image_mode, bool):
+        raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
+    
+    # Defining the mediapipe facemesh task
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, min_detection_confidence = min_detection_confidence,
+                                                min_tracking_confidence = min_tracking_confidence)
+    singleFile = False
 
     # Creating a list of file names to iterate through when processing
     files_to_process = []
@@ -100,9 +127,9 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
 
             match extension:
                 case ".mp4":
-                    codec = "H264"
+                    codec = "MP4V"
                 case ".mov":
-                    codec = "H264"
+                    codec = "MP4V"
                 case _:
                     print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
                     sys.exit(1)
@@ -160,13 +187,13 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                     lips_screen_coords.append((target.get('x'),target.get('y')))
                 
                 # face oval screen coordinates
-                for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
+                for cur_source, cur_target in FACE_OVAL_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     face_outline_coords.append((source.get('x'),source.get('y')))
                     face_outline_coords.append((target.get('x'),target.get('y')))
 
-                # Creating the masked regions 
+                # Creating boolean masks for the facial regions
                 le_mask = np.zeros((frame.shape[0],frame.shape[1]))
                 le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
                 le_mask = le_mask.astype(bool)
@@ -182,23 +209,33 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
                 oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
                 oval_mask = oval_mask.astype(bool)
-                
-                # Masking out eye and mouth regions
-                masked_frame = frame
+
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+                floodfilled = thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
+
+                # Masking the face oval
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                masked_frame[oval_mask] = 255
+
+                # Masking out eyes and lips
                 masked_frame[le_mask] = 0
                 masked_frame[re_mask] = 0
                 masked_frame[lip_mask] = 0
 
                 # Last step, masking out the bounding face shape
-                face_skin = np.zeros_like(masked_frame, dtype=np.uint8)
-                face_skin[oval_mask] = masked_frame[oval_mask] 
+                masked_frame = cv.bitwise_and(masked_frame, foreground)
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                frame = cv.bitwise_and(frame, frame, foreground)
+                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
 
-                # Removing any face mesh artifacts
-                grey = cv.cvtColor(face_skin, cv.COLOR_BGR2GRAY)
-                white_mask = cv.inRange(grey, 220, 255)
-                face_skin[white_mask == 255] = 0
-
-                result.write(face_skin)
+                result.write(masked_frame)
         
             capture.release()
             result.release()
@@ -208,29 +245,29 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
         for file in files_to_process:
 
             # Initializing capture and writer objects
-            filename, extension = os.path.splitext(file)
+            filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             if not capture.isOpened:
                 print("Mask_face_region: Error opening videoCapture object.")
-                return -1
+                sys.exit(1)
 
             codec = None
 
             match extension:
                 case ".mp4":
-                    codec = "H264"
+                    codec = "MP4V"
                 case ".mov":
-                    codec = "H264"
+                    codec = "MP4V"
                 case _:
                     print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
                     sys.exit(1)
-            
+
             size = (int(capture.get(3)), int(capture.get(4)))
             result = cv.VideoWriter(output_dir + "\\" + filename + "_masked" + extension,
                                     cv.VideoWriter.fourcc(*codec), 30, size)
             if not result.isOpened():
                 print("Mask_face_region: Error opening VideoWriter object.")
-                return -1
+                sys.exit(1)
             
             while True:
                 success, frame = capture.read()
@@ -264,16 +301,26 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
                 oval_mask = oval_mask.astype(bool)
 
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+                floodfilled = thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
+
+                # Masking the face oval
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                masked_frame[oval_mask] = 255
+
                 # Last step, masking out the bounding face shape
-                face_skin = np.zeros_like(frame)
-                face_skin[oval_mask] = frame[oval_mask] 
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                frame = cv.bitwise_and(frame, frame, foreground)
+                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
 
-                # Removing any face mesh artifacts
-                grey = cv.cvtColor(face_skin, cv.COLOR_BGR2GRAY)
-                white_mask = cv.inRange(grey, 220, 255)
-                face_skin[white_mask == 255] = 0
-
-                result.write(face_skin)
+                result.write(masked_frame)
         
             capture.release()
             result.release()
@@ -283,19 +330,19 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
         for file in files_to_process:
 
             # Initializing capture and writer objects
-            filename, extension = os.path.splitext(file)
+            filename, extension = os.path.splitext(os.path.basename(file))
             capture = cv.VideoCapture(file)
             if not capture.isOpened:
                 print("Mask_face_region: Error opening videoCapture object.")
-                return -1
+                sys.exit(1)
 
             codec = None
 
             match extension:
                 case ".mp4":
-                    codec = "H264"
+                    codec = "MP4V"
                 case ".mov":
-                    codec = "H264"
+                    codec = "MP4V"
                 case _:
                     print("Mask_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
                     sys.exit(1)
@@ -305,7 +352,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                                     cv.VideoWriter.fourcc(*codec), 30, size)
             if not result.isOpened():
                 print("Mask_face_region: Error opening VideoWriter object.")
-                return -1
+                sys.exit(1)
             
             while True:
                 success, frame = capture.read()
@@ -339,22 +386,33 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
                 oval_mask = oval_mask.astype(bool)
 
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+                floodfilled = thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
+
+                # Masking the face oval
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                masked_frame[oval_mask] = 255
+
                 # Last step, masking out the bounding face shape
-                face_skin = np.zeros_like(frame)
-                face_skin[oval_mask] = frame[oval_mask] 
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                frame = cv.bitwise_and(frame, frame, foreground)
+                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
 
-                # Removing any face mesh artifacts
-                grey = cv.cvtColor(face_skin, cv.COLOR_BGR2GRAY)
-                white_mask = cv.inRange(grey, 220, 255)
-                face_skin[white_mask == 255] = 0
-
-                result.write(face_skin)
+                result.write(masked_frame)
         
             capture.release()
             result.release()
 
-def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, 
-                                with_sub_dirs:bool = False, mask_face:bool = True) -> None:
+def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, with_sub_dirs:bool = False, 
+                                mask_face:bool = True, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5,
+                                static_image_mode:bool = False) -> None:
     """Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory 
     'CSV_Output', where a csv file will be written for each input video file provided.
 
@@ -369,10 +427,22 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
                 A specifier for which color space to operate in.
             
             with_sub_dirs: bool
-                Indicates whether the input directory contains subfolders
+                Indicates whether the input directory contains subfolders.
             
             mask_face: bool
                 Indicates whether to mask the face region prior to extracting color means.
+            
+            min_detection_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
+        
+            min_tracking_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
+            
+            static_image_mode: Boolean
+                A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+                video frames.
         
         Raises:
             TypeError: given invalid parameter types.
@@ -385,12 +455,6 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     global COLOR_SPACE_HSV
     global COLOR_SPACE_GRAYSCALE
     global FACE_OVAL_TIGHT_PATH
-    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
-                                                min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
-    singleFile = False
-    files_to_process = []
-    capture = None
-    csv = None
 
     # Type and value checking input parameters
     if not isinstance(input_dir, str):
@@ -427,7 +491,29 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     
     if not isinstance(with_sub_dirs, bool):
         raise TypeError("Extract_color_channel_means: with_sub_dirs must be a boolean.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    if not isinstance(static_image_mode, bool):
+        raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
+    
+    # Defining mediapipe facemesh task
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, 
+                min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+    singleFile = False
+    files_to_process = []
+    capture = None
+    csv = None
 
+    # Creating a list of file path strings
     if singleFile:
         files_to_process.append(input_dir)
     elif not with_sub_dirs:
@@ -437,7 +523,7 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
                             for path, dirs, files in os.walk(input_dir, topdown=True) 
                             for file in files]
     
-    # create an output directory for the csv files
+    # Create an output directory for the csv files
     if not os.path.isdir(output_dir + "\\Color_Channel_Means"):
         os.mkdir(output_dir + "\\Color_Channel_Means")
     output_dir = os.path.join(output_dir, "\\Color_Channel_Means")
@@ -449,7 +535,7 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
         capture = cv.VideoCapture(file)
         if not capture.isOpened():
             print("Extract_color_channel_means: Error opening videoCapture object.")
-            return -1
+            sys.exit(1)
         
         # Writing the column headers to csv
         if color_space == COLOR_SPACE_RGB:
@@ -645,15 +731,11 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 
         result = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
 
-    # Cleaning up any background artifacts from changing color spaces
-    grey = cv.cvtColor(result, cv.COLOR_BGR2GRAY)
-    white_mask = cv.inRange(grey, 220, 255)
-    result[white_mask == 255] = 255
-
     return result
 
 def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:float, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
-                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False) -> None: 
+                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False,
+                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None: 
     """For each video file contained in input_dir, the function applies a weighted color shift to the face region, outputting 
     each resulting video to output_dir. Weights are calculated using a passed timing function, that returns a float in the normalised
     range [0,1]. (NOTE there is currently no checking to ensure timing function outputs are normalised)
@@ -688,8 +770,20 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
             
             sat_only: bool
                 A boolean flag indicating if only the saturation of the input file will be shifted.
+            
+            min_detection_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
         
-        Throws:
+            min_tracking_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
+            
+            static_image_mode: Boolean
+                A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+                video frames.
+        
+        Raises:
             TypeError: given invalid parameter types.
             OSError: given invalid directory paths.
             ValueError: if timing_func does not return a float value.
@@ -704,7 +798,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
     global COLOR_GREEN
     global COLOR_YELLOW
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
-                                                min_detection_confidence = 0.25, min_tracking_confidence = 0.75)
+                                                min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
     singleFile = False
     
     # Performing checks on function parameters
@@ -750,8 +844,31 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
     
     if not isinstance(sat_only, bool):
         raise TypeError("Face_color_shift: parameter sat_only must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Face_color_shift: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Face_color_shift: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Face_color_shift: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Face_color_shift: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Mask_face_region: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Mask_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    if not isinstance(static_image_mode, bool):
+        raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
 
-    # Creating a list of file names to iterate through when processing
+    # Creating a list of file path strings to iterate through when processing
     files_to_process = []
 
     if singleFile:
@@ -782,9 +899,9 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
 
         match extension:
             case ".mp4":
-                codec = "H264"
+                codec = "MP4V"
             case ".mov":
-                codec = "H264"
+                codec = "MP4V"
             case _:
                 print("Face_color_shift: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
                 sys.exit(1)
@@ -794,7 +911,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
                                 cv.VideoWriter.fourcc(*codec), 30, size)
         if not result.isOpened():
             print("Face_color_shift: Error opening VideoWriter object.")
-            return -1
+            sys.exit(1)
 
         # Getting the video duration for weight calculations
         frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
@@ -872,29 +989,24 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
             oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
             oval_mask = oval_mask.astype(bool)
 
-            # Isolating overall face skin for colouring
-            face_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
-            face_mask[oval_mask] = 255
+            # Masking the face oval
+            masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            masked_frame[oval_mask] = 255
+            masked_frame[le_mask] = 0
+            masked_frame[re_mask] = 0
+            masked_frame[lip_mask] = 0
+            
+            # Otsu thresholding to seperate foreground and background
+            grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+            thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-            # Eroding the face oval to remove background artifacts
-            kernel = cv.getStructuringElement(cv.MORPH_RECT, (5,5))
-            face_mask = cv.morphologyEx(face_mask, cv.MORPH_ERODE, kernel)
+            floodfilled = thresholded.copy()
+            cv.floodFill(floodfilled, None, (0,0), 255)
+            floodfilled = cv.bitwise_not(floodfilled)
+            foreground = cv.bitwise_or(thresholded, floodfilled)
 
-            # Masking out eyes and lips
-            face_mask[le_mask] = 0
-            face_mask[re_mask] = 0
-            face_mask[lip_mask] = 0
-                        
-            # Cleaning up mask with morphological operations
-            face_mask = cv.morphologyEx(face_mask, cv.MORPH_OPEN, kernel)
-            face_mask = cv.morphologyEx(face_mask, cv.MORPH_CLOSE, kernel)
-
-            # Shaving any remaining background artifacts with thresholds
-            f = np.zeros_like(frame, dtype=np.uint8)
-            f[face_mask == 255] = frame[face_mask == 255]
-            white_mask = cv.inRange(cv.cvtColor(f, cv.COLOR_BGR2GRAY), 220, 255)
-            face_mask[white_mask == 255] = 0
-
+            # Getting the current video timestamp
             dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
             
             if sat_only:
@@ -902,24 +1014,28 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
                     result.write(frame)
                 elif dt < offset_t:
                     weight = timing_func(dt)
-                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
+                    frame_coloured[foreground == 0] = frame[foreground == 0]
                     result.write(frame_coloured)
                 else:
                     dt = cap_duration - dt
                     weight = timing_func(dt)
-                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True) 
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
+                    frame_coloured[foreground == 0] = frame[foreground == 0] 
                     result.write(frame_coloured)
             else:
                 if dt < onset_t:
                     result.write(frame)
                 elif dt < offset_t:
                     weight = timing_func(dt)
-                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    frame_coloured[foreground == 0] = frame[foreground == 0]
                     result.write(frame_coloured)
                 else:
                     dt = cap_duration - dt
                     weight = timing_func(dt)
-                    frame_coloured = shift_color_temp(img=frame, img_mask=face_mask, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
+                    frame_coloured[foreground == 0] = frame[foreground == 0]
                     result.write(frame_coloured)
 
         capture.release()

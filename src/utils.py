@@ -221,7 +221,7 @@ def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = F
         
         size = (int(capture.get(3)), int(capture.get(4)))
         result = cv.VideoWriter(output_dir + "\\" + filename + "_transcoded.mp4",
-                                cv.VideoWriter.fourcc(*'H264'), 30, size)
+                                cv.VideoWriter.fourcc(*'MP4V'), 30, size)
         if not result.isOpened():
             print("Transcode_video: Error opening VideoWriter object.")
             sys.exit(1)
