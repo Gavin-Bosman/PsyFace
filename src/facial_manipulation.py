@@ -49,8 +49,8 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
     global FACE_OVAL
     global FACE_OVAL_TIGHT
     global FACE_SKIN_ISOLATION
-    global LEFT_EYE_BROW_PATH
-    global RIGHT_EYE_BROW_PATH
+    global LEFT_EYE_PATH
+    global RIGHT_EYE_PATH
     global LIPS_PATH
     global FACE_OVAL_PATH
     global FACE_OVAL_TIGHT_PATH
@@ -92,7 +92,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
         raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
     
     # Defining the mediapipe facemesh task
-    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, min_detection_confidence = min_detection_confidence,
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, min_detection_confidence = min_detection_confidence,
                                                 min_tracking_confidence = min_tracking_confidence)
     singleFile = False
 
@@ -108,9 +108,9 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                             for file in files]
     
     # Creating named output directories for video output
-    if not os.path.isdir(output_dir + "\\Masked_Videos"):
-        os.mkdir(output_dir + "\\Masked_Videos")
-    output_dir = output_dir + "\\Masked_Videos"
+    if not os.path.isdir(output_dir + "\\Masked_Video_Output"):
+        os.mkdir(output_dir + "\\Masked_Video_Output")
+    output_dir = output_dir + "\\Masked_Video_Output"
 
     if mask_type == FACE_SKIN_ISOLATION:
 
@@ -166,14 +166,14 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 face_outline_coords = []
 
                 # left eye screen coordinates
-                for cur_source, cur_target in LEFT_EYE_BROW_PATH:
+                for cur_source, cur_target in LEFT_EYE_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     le_screen_coords.append((source.get('x'),source.get('y')))
                     le_screen_coords.append((target.get('x'),target.get('y')))
                 
                 # right eye screen coordinates
-                for cur_source, cur_target in RIGHT_EYE_BROW_PATH:
+                for cur_source, cur_target in RIGHT_EYE_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
                     re_screen_coords.append((source.get('x'),source.get('y')))
@@ -410,6 +410,231 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             capture.release()
             result.release()
 
+def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list[list[tuple]] | list[tuple], occlusion_fill:int = OCCLUSION_FILL_BLACK,
+                        with_sub_dirs:bool =  False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, 
+                        static_image_mode:bool = False) -> None:
+    ''' For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude will 
+    be occluded with either black or the facial mean. Processed files are then output to Occluded_Video_Output within the specified
+    output directory.
+
+        Args:
+            input_dir: String
+                A path string to the directory containing files to process. 
+
+            output_dir: String
+                A path string to the directory where processed videos will be written.
+
+            landmarks_to_occlude: List[List[Tuple]] | List[Tuple]
+                A list of facial landmark paths, either created by the user using utils.create_path(), or selected from the 
+                predefined set of facial landmark paths.
+            
+            occlusion_fill: Integer
+                An integer flag indicating the fill method of the occluded landmark regions. One of OCCLUSION_FILL_BLACK or 
+                OCCLUSION_FILL_MEAN.
+            
+            with_sub_dirs: Boolean
+                A boolean flag indicating if the input directory contains subfolders.
+            
+            min_detection_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
+        
+            min_tracking_confidence: Float
+                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+                FaceMesh constructor.
+            
+            static_image_mode: Boolean
+                A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+                video frames.
+        
+        Raises:
+            TypeError: given invalid parameter types.
+            ValueError: given invalid landmark sets or unrecognized fill options.
+            OSError: given invalid path strings to either input_dir or output_dir.
+    '''
+    
+    global OCCLUSION_FILL_BLACK
+    global OCCLUSION_FILL_MEAN
+    global FACE_OVAL_TIGHT_PATH
+    singleFile = False
+
+    # Performing checks on function parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("Occlude_face_region: invalid type for parameter input_dir.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Occlude_face_region: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("Occlude_face_region: parameter output_dir must be a str.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Occlude_face_region: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(output_dir):
+        raise ValueError("Occlude_face_region: output_dir must be a valid path to a directory.")
+    
+    if not isinstance(landmarks_to_occlude, list):
+        raise TypeError("Occlude_face_region: parameter landmarks_to_occlude expects a list.")
+    if not isinstance(landmarks_to_occlude[0], list) or isinstance(landmarks_to_occlude[0], tuple):
+        raise ValueError("Occlude_face_region: landmarks_to_occlude may either be a list of lists, or a singular list of tuples.")
+    
+    if not isinstance(occlusion_fill, int):
+        raise TypeError("Occlude_face_region: parameter occlusion_fill must be of type int.")
+    elif occlusion_fill not in [OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN]:
+        raise ValueError("Occlude_face_region: parameter occlusion_fill must be one of OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN.")
+    
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Occlude_face_region: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Occlude_face_region: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Occlude_face_region: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Occlude_face_region: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Occlude_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    if not isinstance(static_image_mode, bool):
+        raise TypeError("Occlude_face_region: parameter static_image_mode must be of type bool.")
+    
+    # Defining the mediapipe facemesh task
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, min_detection_confidence = min_detection_confidence,
+                                                min_tracking_confidence = min_tracking_confidence)
+
+    # Creating a list of file names to iterate through when processing
+    files_to_process = []
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+         files_to_process = os.listdir(input_dir)
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    if not os.path.exists(output_dir + "\\Occluded_Video_Output"):
+        os.mkdir(output_dir + "\\Occluded_Video_Output")
+    output_dir = output_dir + "\\Occluded_Video_Output"
+
+    for file in files_to_process:
+
+        # Initialize capture and writer objects
+        filename, extension = os.path.splitext(os.path.basename(file))
+        capture = cv.VideoCapture(file)
+        if not capture.isOpened():
+            print("Occlude_face_region: Error opening video file.")
+            sys.exit(1)
+        
+        codec = None
+
+        match extension:
+            case ".mp4":
+                codec = "MP4V"
+            case ".mov":
+                codec = "MP4V"
+            case _:
+                print("Occlude_face_region: Incompatible video file type. Please see utils.transcode_video_to_mp4().")
+                sys.exit(1)
+        
+        size = (int(capture.get(3)), int(capture.get(4)))
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_color_shifted" + extension,
+                                cv.VideoWriter.fourcc(*codec), 30, size)
+        if not result.isOpened():
+            print("Occlude_face_region: Error opening VideoWriter object.")
+            sys.exit(1)
+
+        while True:
+
+            success, frame = capture.read()
+            if not success:
+                break    
+
+            face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+            landmark_screen_coords = []
+
+            if face_mesh_results.multi_face_landmarks:
+                for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                    # Convert normalised landmark coordinates to x-y pixel coordinates
+                    for id,lm in enumerate(face_landmarks.landmark):
+                        ih, iw, ic = frame.shape
+                        x,y = int(lm.x * iw), int(lm.y * ih)
+                        landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+            else:
+                continue
+
+            masked_frame = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+
+            if isinstance(landmarks_to_occlude[0], list):
+                for landmark_set in landmarks_to_occlude:
+
+                    cur_landmark_coords = []
+                    # Converting landmark coords to screen coords
+                    for cur_source, cur_target in landmark_set:
+                        source = landmark_screen_coords[cur_source]
+                        target = landmark_screen_coords[cur_target]
+                        cur_landmark_coords.append((source.get('x'),source.get('y')))
+                        cur_landmark_coords.append((target.get('x'),target.get('y')))
+                    
+                    # Creating boolean masks for the facial landmarks 
+                    bool_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                    bool_mask = cv.fillConvexPoly(bool_mask, np.array(cur_landmark_coords), 1)
+                    bool_mask = bool_mask.astype(bool)
+
+                    masked_frame[bool_mask] = 255
+            else:
+                cur_landmark_coords = []
+                # Converting landmark coords to screen coords
+                for cur_source, cur_target in landmarks_to_occlude:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    cur_landmark_coords.append((source.get('x'),source.get('y')))
+                    cur_landmark_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial landmarks 
+                bool_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                bool_mask = cv.fillConvexPoly(bool_mask, np.array(cur_landmark_coords), 1)
+                bool_mask = bool_mask.astype(bool)
+
+                masked_frame[bool_mask] = 255
+
+            # Masking out occlusion regions from the current frame
+            if occlusion_fill == OCCLUSION_FILL_BLACK:
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                frame = np.where(masked_frame == 255, 0, frame)
+
+            elif occlusion_fill == OCCLUSION_FILL_MEAN:
+                cur_landmark_coords = []
+                for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    cur_landmark_coords.append((source.get('x'),source.get('y')))
+                    cur_landmark_coords.append((target.get('x'),target.get('y')))
+
+                # Creating boolean masks for the facial landmarks 
+                bool_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                bool_mask = cv.fillConvexPoly(bool_mask, np.array(cur_landmark_coords), 1)
+                bool_mask = bool_mask.astype(bool)
+
+                # Extracting the mean pixel value of the face
+                bin_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                bin_mask[bool_mask] = 255
+                mean = cv.mean(frame, bin_mask)
+                
+                # Fill occlusion regions with facial mean
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                mean_img = np.zeros_like(frame, dtype=np.uint8)
+                mean_img[:] = mean[:3]
+                frame = np.where(masked_frame == 255, mean_img, frame)
+
+            result.write(frame)
+
+        capture.release()
+        result.release()
+            
+
 def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, with_sub_dirs:bool = False, 
                                 mask_face:bool = True, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5,
                                 static_image_mode:bool = False) -> None:
@@ -493,17 +718,17 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
         raise TypeError("Extract_color_channel_means: with_sub_dirs must be a boolean.")
     
     if not isinstance(min_detection_confidence, float):
-        raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
+        raise TypeError("Extract_color_channel_means: parameter min_detection_confidence must be of type float.")
     elif min_detection_confidence < 0 or min_detection_confidence > 1:
-        raise ValueError("Mask_face_region: parameter min_detection_confidence must be in the range [0,1].")
+        raise ValueError("Extract_color_channel_means: parameter min_detection_confidence must be in the range [0,1].")
     
     if not isinstance(min_tracking_confidence, float):
-        raise TypeError("Mask_face_region: parameter min_tracking_confidence must be of type float.")
+        raise TypeError("Extract_color_channel_means: parameter min_tracking_confidence must be of type float.")
     elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
-        raise ValueError("Mask_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+        raise ValueError("Extract_color_channel_means: parameter min_tracking_confidence must be in the range [0,1].")
     
     if not isinstance(static_image_mode, bool):
-        raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
+        raise TypeError("Extract_color_channel_means: parameter static_image_mode must be of type bool.")
     
     # Defining mediapipe facemesh task
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, 
@@ -790,8 +1015,8 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
     """
 
     global FACE_OVAL_PATH
-    global RIGHT_EYE_PATH
-    global LEFT_EYE_PATH
+    global RIGHT_IRIS_PATH
+    global LEFT_IRIS_PATH
     global LIPS_TIGHT_PATH
     global COLOR_RED
     global COLOR_BLUE
@@ -803,7 +1028,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
     
     # Performing checks on function parameters
     if not isinstance(input_dir, str):
-        raise TypeError("Face_color_shift: invalid type for parameter inputDirectory.")
+        raise TypeError("Face_color_shift: invalid type for parameter input_dir.")
     elif not os.path.exists(input_dir):
         raise OSError("Face_color_shift: input directory path is not a valid path, or the directory does not exist.")
     elif os.path.isfile(input_dir):
@@ -855,18 +1080,8 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
     elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
         raise ValueError("Face_color_shift: parameter min_tracking_confidence must be in the range [0,1].")
     
-    if not isinstance(min_detection_confidence, float):
-        raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
-    elif min_detection_confidence < 0 or min_detection_confidence > 1:
-        raise ValueError("Mask_face_region: parameter min_detection_confidence must be in the range [0,1].")
-    
-    if not isinstance(min_tracking_confidence, float):
-        raise TypeError("Mask_face_region: parameter min_tracking_confidence must be of type float.")
-    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
-        raise ValueError("Mask_face_region: parameter min_tracking_confidence must be in the range [0,1].")
-    
     if not isinstance(static_image_mode, bool):
-        raise TypeError("Mask_face_region: parameter static_image_mode must be of type bool.")
+        raise TypeError("Face_color_shift: parameter static_image_mode must be of type bool.")
 
     # Creating a list of file path strings to iterate through when processing
     files_to_process = []
@@ -945,14 +1160,14 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float, offset_t:floa
             face_outline_coords = []
 
             # Left eye screen coordinates
-            for cur_source, cur_target in LEFT_EYE_PATH:
+            for cur_source, cur_target in LEFT_IRIS_PATH:
                 source = landmark_screen_coords[cur_source]
                 target = landmark_screen_coords[cur_target]
                 le_screen_coords.append((source.get('x'),source.get('y')))
                 le_screen_coords.append((target.get('x'),target.get('y')))
             
             # Right eye screen coordinates
-            for cur_source, cur_target in RIGHT_EYE_PATH:
+            for cur_source, cur_target in RIGHT_IRIS_PATH:
                 source = landmark_screen_coords[cur_source]
                 target = landmark_screen_coords[cur_target]
                 re_screen_coords.append((source.get('x'),source.get('y')))

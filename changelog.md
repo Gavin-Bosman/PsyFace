@@ -3,8 +3,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- v0.3 occlude_face_region
-- v0.3 test cases
+- v0.3.1 ensure functions perform as expected with static images as input (bug fixes)
+- v0.3.2 unit testing
+- v1.0 gui preview prior to file processing
+
+## [0.3.0] - 2024-08-02
+
+### Added
+
+- v0.3 occlude_face_region()
+
+### Changed
+
+- Redefined the naming convention used for constants in utils.py
+
+### Removed
 
 ## [0.2.2] - 2024-07-31
 
@@ -24,7 +37,7 @@ artifacts are present in the facial color shifting, or facial masking.
 
 ### Added
 
-- v0.2.1 transcode_video_to_mp4
+- v0.2.1 transcode_video_to_mp4()
 
 ### Changed
 

@@ -5,12 +5,10 @@ import os
 import sys
 
 # Defining pertinent facemesh landmark sets
-LEFT_EYE_BROW_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
-LEFT_EYE_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
-LEFT_CHEEK_IDX = [265, 261, 448, 449, 450, 451, 452, 350, 277, 371, 266, 425, 280, 346, 340, 265]
-RIGHT_EYE_BROW_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
-RIGHT_EYE_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
-RIGHT_CHEEK_IDX = [35, 31, 228, 229, 230, 231, 232, 233, 128, 114, 126, 142, 36, 205, 50, 117, 111, 35]
+LEFT_EYE_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
+LEFT_IRIS_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
+RIGHT_EYE_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
+RIGHT_IRIS_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
 LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
 LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
 FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
@@ -46,12 +44,10 @@ def create_path(landmark_set:list[int]) -> list[tuple]:
     return routes
 
 # Preconstructed face region paths for use with facial manipulation functions
-LEFT_EYE_BROW_PATH = create_path(LEFT_EYE_BROW_IDX)
 LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
-LEFT_CHEEK_PATH = create_path(LEFT_CHEEK_IDX)
-RIGHT_EYE_BROW_PATH = create_path(RIGHT_EYE_BROW_IDX)
+LEFT_IRIS_PATH = create_path(LEFT_IRIS_IDX)
 RIGHT_EYE_PATH = create_path(RIGHT_EYE_IDX)
-RIGHT_CHEEK_PATH = create_path(RIGHT_CHEEK_IDX)
+RIGHT_IRIS_PATH = create_path(RIGHT_IRIS_IDX)
 LIPS_PATH = create_path(LIPS_IDX)
 LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
@@ -73,6 +69,10 @@ COLOR_RED = 4
 COLOR_BLUE = 5
 COLOR_GREEN = 6
 COLOR_YELLOW = 7
+
+# Fill options for occluded face regions
+OCCLUSION_FILL_BLACK = 8
+OCCLUSION_FILL_MEAN = 9
 
 def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
