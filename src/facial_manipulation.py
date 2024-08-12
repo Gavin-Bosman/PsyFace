@@ -410,6 +410,10 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
             capture.release()
             result.release()
 
+# 21-251, 227-447 eye rect
+# 227-447, 213-433 nose rect
+# 213-433, 172-397 mouth rect
+
 def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list[list[tuple]] | list[tuple], occlusion_fill:int = OCCLUSION_FILL_BLACK,
                         with_sub_dirs:bool =  False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, 
                         static_image_mode:bool = False) -> None:
@@ -480,8 +484,8 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
     
     if not isinstance(occlusion_fill, int):
         raise TypeError("Occlude_face_region: parameter occlusion_fill must be of type int.")
-    elif occlusion_fill not in [OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN]:
-        raise ValueError("Occlude_face_region: parameter occlusion_fill must be one of OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN.")
+    elif occlusion_fill not in [OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN, OCCLUSION_FILL_BAR]:
+        raise ValueError("Occlude_face_region: parameter occlusion_fill must be one of OCCLUSION_FILL_BLACK, OCCLUSION_FILL_MEAN or OCCLUSION_FILL_BAR.")
     
     if not isinstance(with_sub_dirs, bool):
         raise TypeError("Occlude_face_region: parameter with_sub_dirs must be of type bool.")
@@ -539,7 +543,7 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
                 sys.exit(1)
         
         size = (int(capture.get(3)), int(capture.get(4)))
-        result = cv.VideoWriter(output_dir + "\\" + filename + "_color_shifted" + extension,
+        result = cv.VideoWriter(output_dir + "\\" + filename + "_occluded" + extension,
                                 cv.VideoWriter.fourcc(*codec), 30, size)
         if not result.isOpened():
             print("Occlude_face_region: Error opening VideoWriter object.")
@@ -628,6 +632,36 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
                 mean_img = np.zeros_like(frame, dtype=np.uint8)
                 mean_img[:] = mean[:3]
                 frame = np.where(masked_frame == 255, mean_img, frame)
+            
+            elif occlusion_fill == OCCLUSION_FILL_BAR:
+                if LEFT_EYE_PATH in landmarks_to_occlude or RIGHT_EYE_PATH in landmarks_to_occlude:
+                    start = landmark_screen_coords[21]
+                    start = (start.get('x'), start.get('y'))
+                    end = landmark_screen_coords[447]
+                    end = (end.get('x'), end.get('y'))
+                   
+                    frame = cv2.rectangle(frame, start, end, (0,0,0), -1)
+                
+                elif LIPS_PATH in landmarks_to_occlude:
+                    start = landmark_screen_coords[213]
+                    start = (start.get('x') -10, start.get('y'))
+                    end = landmark_screen_coords[365]
+                    end = (end.get('x') + 20, end.get('y') + 20)
+
+                    frame = cv2.rectangle(frame, start, end, (0,0,0), -1)
+
+                elif NOSE_PATH in landmarks_to_occlude:
+                    start = landmark_screen_coords[227]
+                    start = (start.get('x'), start.get('y'))
+                    end = landmark_screen_coords[433]
+                    end = (end.get('x') + 20, end.get('y'))
+
+                    frame = cv2.rectangle(frame, start, end, (0,0,0), -1)
+                
+                else:
+                    print("""Occlude_face_region: OCCLUSION_FILL_BAR is only compatible with EYE, LIPS and NOSE paths.
+                          Please check your provided landmark paths and try again.""")
+                    sys.exit(1)
 
             result.write(frame)
 

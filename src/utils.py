@@ -9,6 +9,7 @@ LEFT_EYE_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448,
 LEFT_IRIS_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
 RIGHT_EYE_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
 RIGHT_IRIS_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
+NOSE_IDX = [168, 193, 122, 196, 3, 198, 49, 203, 167, 164, 393, 423, 279, 420, 248, 419, 351, 417, 168]
 LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
 LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
 FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
@@ -48,6 +49,7 @@ LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
 LEFT_IRIS_PATH = create_path(LEFT_IRIS_IDX)
 RIGHT_EYE_PATH = create_path(RIGHT_EYE_IDX)
 RIGHT_IRIS_PATH = create_path(RIGHT_IRIS_IDX)
+NOSE_PATH = create_path(NOSE_IDX)
 LIPS_PATH = create_path(LIPS_IDX)
 LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
@@ -73,6 +75,7 @@ COLOR_YELLOW = 7
 # Fill options for occluded face regions
 OCCLUSION_FILL_BLACK = 8
 OCCLUSION_FILL_MEAN = 9
+OCCLUSION_FILL_BAR = 10
 
 def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum

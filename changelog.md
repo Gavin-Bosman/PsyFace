@@ -29,7 +29,7 @@ All notable changes to this project will be documented in this file.
 - Mask_face_region and face_color_shift now take confidence parameters for the underlying mediapipe face landmarker model.
 - Implemented otsu thresholding to isolate foreground to use as a mask. This foreground mask ensures that no background 
 artifacts are present in the facial color shifting, or facial masking. 
-- Added documentation for new funtion parameters.
+- Added documentation for new function parameters.
 
 ### Removed
 
