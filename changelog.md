@@ -3,9 +3,43 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- v0.3.1 ensure functions perform as expected with static images as input (bug fixes)
-- v0.3.2 unit testing
+- v0.5 unit testing
 - v1.0 gui preview prior to file processing
+
+## [0.4.1] - 2024-08-18
+
+### Added
+
+### Changed
+
+- v0.4.1 bug fixes for processing directories of mixed file types (images and videos). 
+
+### Removed
+
+## [0.4.0] - 2024-08-17
+
+### Added
+
+### Changed
+
+- v0.4 Refactored all methods; moved repetative frame operations to nested functions for increased readability.
+- Fixed buggy behaviour when working with still images over all methods. On top of video formats .MP4 and .MOV, you can now perform facial masking, occlusion and colour shifting over image formats .jpg, .jpeg, .png, and .bmp.
+- Increased error handling; methods should now be able to process large directories of mixed file formats efficiently in a single call. 
+
+### Removed
+
+## [0.3.1] - 2024-08-11
+
+### Added
+
+- v0.3.1 Support for nose masking and occluding
+
+### Changed
+
+- Added bar-style occlusion options to occlude_face_region(). You can now perform bar-style occlusion on the eyes, nose 
+and mouth regions. 
+
+### Removed
 
 ## [0.3.0] - 2024-08-02
 

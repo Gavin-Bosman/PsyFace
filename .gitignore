@@ -5,3 +5,4 @@ src/__pycache__/
 Color_Shifted_Videos/
 Masked_Video_Output/
 Occluded_Video_Output/
+Color_Channel_Means/
