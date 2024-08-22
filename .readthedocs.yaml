@@ -15,5 +15,5 @@ conda:
   file: environment.yaml
 
 formats:
-  - html
-  - pdf
+  - "html"
+  - "pdf"
