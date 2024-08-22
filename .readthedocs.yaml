@@ -8,8 +8,9 @@ build:
     python: "3.11"
 
 python:
-  install:
+  install: [
     requirements: docs/requirements.txt
+  ]
 
 sphinx:
   configuration: docs/conf.py
