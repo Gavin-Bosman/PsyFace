@@ -28,6 +28,7 @@ extensions = [
 ]
 
 napoleon_google_doctrings = False
+autodoc_mock_imports = ['numpy']
 templates_path = ['_templates']
 exclude_patterns = ['.\\data', '.\\source\\processing_script.py', '.\\source\\OpenCV_References']
 root_doc = 'index'
