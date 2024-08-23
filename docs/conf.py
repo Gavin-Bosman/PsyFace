@@ -1,8 +1,3 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -18,17 +13,19 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',   # Automatically document from docstrings
+    'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
-    'sphinx.ext.napoleon',  # Support for Google style docstrings
-    'sphinx.ext.viewcode',  # Add links to highlighted source code
-    'sphinx.ext.intersphinx',  # Link to other projects' documentation
-    'sphinx.ext.todo',  # Support for todo and todolist directives
-    'sphinx.ext.mathjax',  # Render math via MathJax
+    'sphinx.ext.napoleon',  
+    'sphinx.ext.viewcode',  
+    'sphinx.ext.intersphinx',  
+    'sphinx.ext.todo',
+    'numpy',
+    'mediapipe',
+    'opencv-python',
+    'pandas'  
 ]
 
 napoleon_google_doctrings = False
-autodoc_mock_imports = ['numpy']
 templates_path = ['_templates']
 exclude_patterns = ['.\\data', '.\\source\\processing_script.py', '.\\source\\OpenCV_References']
 root_doc = 'index'

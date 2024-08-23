@@ -2,4 +2,4 @@ Mask_face_region()
 ==================
 
 .. automodule:: source.PsyFace
-    :members:
+    :members: mask_face_region
