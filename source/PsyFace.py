@@ -10,39 +10,43 @@ from utils import *
 
 def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
-    """Applies specified mask type to video files located in input_dir.
+    """Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.
 
-    Args:
-        input_dir: String
-            A path string of the directory containing videos to process.
+    Parameters
+    ----------
+    input_dir: str
+        A path string of the directory containing videos to process.
 
-        output_dir: String
-            A path string of the directory where processed videos will be written to.
+    output_dir: str
+        A path string of the directory where processed videos will be written to.
 
-        mask_type: Integer
-            An integer indicating the type of mask to apply to the input videos. This can be one of two options:
-            either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.
+    mask_type: int
+        An integer indicating the type of mask to apply to the input videos. This can be one of two options:
+        either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.
 
-        with_sub_dirs: Boolean 
-            Indicates if the input directory contains subfolders.
+    with_sub_dirs: bool
+        Indicates if the input directory contains subfolders.
 
-        min_detection_confidence: Float
-            A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-            FaceMesh constructor.
-        
-        min_tracking_confidence: Float
-            A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-            FaceMesh constructor.
-        
-        static_image_mode: Boolean
-            A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
-            video frames.
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
     
-    Raises:
-        ValueError: given an unknown mask type.
-        TypeError: given invalid parameter types.
-        OSError: given invalid path strings for in/output directories
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
     
+    static_image_mode: bool
+        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+        video frames.
+    
+    Raises
+    ------
+    ValueError 
+        Given an unknown mask type.
+    TypeError 
+        Given invalid parameter types.
+    OSError: 
+        Given invalid path strings for in/output directories
     """
 
     global MASK_OPTIONS
@@ -334,7 +338,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
                             min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
             case _:
-                print("Face_color_shift: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
+                print("Mask_face_region: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
                 sys.exit(1)
 
         capture = None
@@ -377,44 +381,49 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
 def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list[list[tuple]] | list[tuple], occlusion_fill:int = OCCLUSION_FILL_BLACK,
                         with_sub_dirs:bool =  False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, 
                         static_image_mode:bool = False) -> None:
-    ''' For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude will 
-    be occluded with either black or the facial mean. Processed files are then output to Occluded_Video_Output within the specified
-    output directory.
+    ''' For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude 
+    will be occluded with either black or the facial mean pixel value. Processed files are then output to Occluded_Video_Output 
+    within the specified output directory.
 
-        Args:
-            input_dir: String
-                A path string to the directory containing files to process. 
+    Parameters
+    ----------
+    input_dir: str
+        A path string to the directory containing files to process. 
 
-            output_dir: String
-                A path string to the directory where processed videos will be written.
+    output_dir: str
+        A path string to the directory where processed videos will be written.
 
-            landmarks_to_occlude: List[List[Tuple]] | List[Tuple]
-                A list of facial landmark paths, either created by the user using utils.create_path(), or selected from the 
-                predefined set of facial landmark paths.
-            
-            occlusion_fill: Integer
-                An integer flag indicating the fill method of the occluded landmark regions. One of OCCLUSION_FILL_BLACK or 
-                OCCLUSION_FILL_MEAN.
-            
-            with_sub_dirs: Boolean
-                A boolean flag indicating if the input directory contains subfolders.
-            
-            min_detection_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
+    landmarks_to_occlude: list of list, list of tuple
+        A list of facial landmark paths, either created by the user using utils.create_path(), or selected from the 
+        predefined set of facial landmark paths.
+    
+    occlusion_fill: int
+        An integer flag indicating the fill method of the occluded landmark regions. One of OCCLUSION_FILL_BLACK or 
+        OCCLUSION_FILL_MEAN.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating if the input directory contains subfolders.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+    
+    static_image_mode: bool
+        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+        video frames.
         
-            min_tracking_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
-            
-            static_image_mode: Boolean
-                A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
-                video frames.
-        
-        Raises:
-            TypeError: given invalid parameter types.
-            ValueError: given invalid landmark sets or unrecognized fill options.
-            OSError: given invalid path strings to either input_dir or output_dir.
+    Raises
+    ------
+    TypeError 
+        Given invalid parameter types.
+    ValueError 
+        Given invalid landmark sets or unrecognized fill options.
+    OSError 
+        Given invalid path strings to either input_dir or output_dir.
     '''
     
     global OCCLUSION_FILL_BLACK
@@ -570,7 +579,7 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
                 face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
                             min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
             case _:
-                print("Face_color_shift: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
+                print("Occlude_face_region: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
                 sys.exit(1)
 
         capture = None
@@ -670,34 +679,39 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     """Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory 
     'CSV_Output', where a csv file will be written for each input video file provided.
 
-        Args:
-            input_dir: str
-                A path string to a directory containing the video files to be processed.
+    Parameters
+    ----------
+    input_dir: str
+        A path string to a directory containing the video files to be processed.
 
-            output_dir: str
-                A path string to a directory where outputted csv files will be written to.
-            
-            color_space: int | str
-                A specifier for which color space to operate in.
-            
-            with_sub_dirs: bool
-                Indicates whether the input directory contains subfolders.
-            
-            mask_face: bool
-                Indicates whether to mask the face region prior to extracting color means.
-            
-            min_detection_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
+    output_dir: str
+        A path string to a directory where outputted csv files will be written to.
+    
+    color_space: int, str
+        A specifier for which color space to operate in.
+    
+    with_sub_dirs: bool
+        Indicates whether the input directory contains subfolders.
+    
+    mask_face: bool
+        Indicates whether to mask the face region prior to extracting color means.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
         
-            min_tracking_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
-        
-        Raises:
-            TypeError: given invalid parameter types.
-            ValueError: given an unrecognized color space.
-            OSError: input or output directories are invalid paths.
+    Raises
+    ------
+    TypeError
+        Given invalid parameter types.
+    ValueError 
+        Given an unrecognized color space.
+    OSError 
+        If input or output directories are invalid paths.
     """
     
     # Global declarations and init
@@ -867,40 +881,44 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
 
 def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | None, shift_weight: float, max_color_shift: float = 8.0, 
                     max_sat_shift: float = 0.0, shift_color: str|int = COLOR_RED, sat_only: bool = False) -> cv2.typing.MatLike:
-    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) units in 
-        the masked region of the image. This function makes use of the CIE Lab* perceptually uniform color space to perform natural looking
-        color shifts on the face.
+    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) 
+    units in the masked region of the image. This function makes use of the CIE Lab* perceptually uniform color space to 
+    perform natural looking color shifts on the face.
 
-        Args:
-            img: Matlike
-                An input still image or video frame.
+    Parameters
+    ----------
+    img: Matlike
+        An input still image or video frame.
 
-            img_mask: Matlike
-                A binary image with the same shape as img.
+    img_mask: Matlike
+        A binary image with the same shape as img.
 
-            shift_weight: float
-                The current shifting weight; a float in the range [0,1] returned from a timing function. 
+    shift_weight: float
+        The current shifting weight; a float in the range [0,1] returned from a timing function. 
 
-            max_color_shift: float
-                The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.
+    max_color_shift: float
+        The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.
+    
+    max_sat_shift: float
+        The maximum units to shift the images saturation by.
+    
+    shift_color: str, int
+        An integer or string literal specifying which color will be applied to the input image.
+
+    sat_only: bool
+        A boolean flag that indicates if only the saturation is being modified.
             
-            max_sat_shift: float
-                The maximum units to shift the images saturation by.
-            
-            shift_color: str | int
-                An integer or string literal specifying which color will be applied to the input image.
+    Raises
+    ------
+    TypeError
+        On invalid input parameter types.
+    ValueError 
+        If an undefined color value is passed, or non-matching image and mask shapes are provided.
 
-            sat_only: bool
-                A boolean flag that indicates if only the saturation is being modified.
-            
-        Raises:
-            TypeError: on invalid input parameter types.
-            ValueError: on undefined color values, or unmatching image and mask shapes.
-        
-        Returns:
-            result: Matlike
-                The input image, color-shifted in the region specified by the input mask. 
-
+    Returns
+    -------
+    result: Matlike
+        The input image, color-shifted in the region specified by the input mask. 
     """
 
     global COLOR_RED
@@ -983,57 +1001,63 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
                      timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None: 
-    """For each video file contained in input_dir, the function applies a weighted color shift to the face region, outputting 
-    each resulting video to output_dir. Weights are calculated using a passed timing function, that returns a float in the normalised
-    range [0,1]. (NOTE there is currently no checking to ensure timing function outputs are normalised)
+    """For each video file contained in input_dir, the function applies a weighted color shift to the face region, 
+    outputting each resulting video to output_dir. Weights are calculated using a passed timing function, that returns
+    a float in the normalised range [0,1].
+    (NOTE there is currently no checking to ensure timing function outputs are normalised)
 
-        Args:
-            input_dir: String
-                A path string to the directory containing input video files.
+    Parameters
+    ----------
+    input_dir: str
+        A path string to the directory containing input video files.
 
-            output_dir: String
-                A path string to the directory where outputted video files will be saved.
-            
-            onset_t: float
-                The onset time of the colour shifting.
-            
-            offset_t: float
-                The offset time of the colour shifting.
-            
-            max_color_shift: float
-                The maximum units to shift the colour temperature by, during peak onset.
-            
-            max_sat_shift: float
-                The maximum units to shift the images saturation by, during peak onset.
-            
-            timingFunc: Function() -> float
-                Any function that takes at least one input float (time), and returns a float.
+    output_dir: str
+        A path string to the directory where outputted video files will be saved.
+    
+    onset_t: float
+        The onset time of the colour shifting.
+    
+    offset_t: float
+        The offset time of the colour shifting.
+    
+    max_color_shift: float
+        The maximum units to shift the colour temperature by, during peak onset.
+    
+    max_sat_shift: float
+        The maximum units to shift the images saturation by, during peak onset.
+    
+    timingFunc: Function() -> float
+        Any function that takes at least one input float (time), and returns a float.
 
-            shift_color: String | int
-                Either a string literal specifying the color of choice, or a predefined integer constant.
-            
-            with_sub_dirs: bool
-                A boolean flag indicating whether the input directory contains nested directories.
-            
-            sat_only: bool
-                A boolean flag indicating if only the saturation of the input file will be shifted.
-            
-            min_detection_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
+    shift_color: str, int
+        Either a string literal specifying the color of choice, or a predefined integer constant.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating whether the input directory contains nested directories.
+    
+    sat_only: bool
+        A boolean flag indicating if only the saturation of the input file will be shifted.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+    
+    static_image_mode: bool
+        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+        video frames.
         
-            min_tracking_confidence: Float
-                A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-                FaceMesh constructor.
-            
-            static_image_mode: Boolean
-                A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
-                video frames.
-        
-        Raises:
-            TypeError: given invalid parameter types.
-            OSError: given invalid directory paths.
-            ValueError: if timing_func does not return a float value.
+    Raises
+    ------
+    TypeError
+        Given invalid parameter types.
+    OSError
+        Given invalid directory paths.
+    ValueError:
+        If provided timing_func does not return a normalised float value.
     """
 
     global FACE_OVAL_PATH

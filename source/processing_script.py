@@ -1,4 +1,4 @@
-import facial_manipulation as fi
+import source.PsyFace as fi
 from utils import *
 import numpy as np
 import os
