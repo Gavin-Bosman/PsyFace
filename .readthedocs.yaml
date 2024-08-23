@@ -1,5 +1,3 @@
----
-# readthedocs configuration file
 version: 2
 
 build:
@@ -7,13 +5,8 @@ build:
   tools:
     python: "miniconda3-4.7"
 
-python:
-  install: [
-    requirements: docs/requirements.txt
-  ]
-
 sphinx:
-  configuration: docs/conf.py
+  configuration: source/conf.py
   fail_on_warning: true
 
 conda:
@@ -21,3 +14,7 @@ conda:
 
 formats:
   - pdf
+
+python:
+  install:
+  - requirements: source/requirements.txt
