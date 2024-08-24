@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import sys
 from typing import Callable
-from utils import *
+from source.utils import *
 
 def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
@@ -14,6 +14,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
 
     Parameters
     ----------
+
     input_dir: str
         A path string of the directory containing videos to process.
 
@@ -41,6 +42,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
     
     Raises
     ------
+
     ValueError 
         Given an unknown mask type.
     TypeError 
@@ -387,6 +389,7 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
 
     Parameters
     ----------
+
     input_dir: str
         A path string to the directory containing files to process. 
 
@@ -418,6 +421,7 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
         
     Raises
     ------
+
     TypeError 
         Given invalid parameter types.
     ValueError 
@@ -681,6 +685,7 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
 
     Parameters
     ----------
+
     input_dir: str
         A path string to a directory containing the video files to be processed.
 
@@ -706,6 +711,7 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
         
     Raises
     ------
+
     TypeError
         Given invalid parameter types.
     ValueError 
@@ -887,6 +893,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 
     Parameters
     ----------
+
     img: Matlike
         An input still image or video frame.
 
@@ -910,6 +917,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
             
     Raises
     ------
+
     TypeError
         On invalid input parameter types.
     ValueError 
@@ -917,6 +925,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 
     Returns
     -------
+
     result: Matlike
         The input image, color-shifted in the region specified by the input mask. 
     """
@@ -1008,6 +1017,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
 
     Parameters
     ----------
+
     input_dir: str
         A path string to the directory containing input video files.
 
@@ -1052,6 +1062,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
         
     Raises
     ------
+    
     TypeError
         Given invalid parameter types.
     OSError
@@ -1151,7 +1162,6 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
             
         # Filetype is used to determine the functions running mode
         filename, extension = os.path.splitext(os.path.basename(file))
-        print(filename)
         codec = None
         capture = None
         result = None

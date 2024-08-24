@@ -18,13 +18,22 @@ FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433
             152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
 
 def create_path(landmark_set:list[int]) -> list[tuple]:
-    """Creates a list of interconnected points, given a set of facial landmark indicies.
+    """Given a list of facial landmarks (int), returns a list of tuples, creating a closed path in the form 
+    [(a,b), (b,c), (c,d), ...]. This function allows the user to create custom facial landmark sets, for use in 
+    mask_face_region() and occlude_face_region().
     
-    Args: 
-        landmark_set: a python list containing facial landmark indicies.
+    Parameters
+    ----------
+
+    landmark_set: list of int
+        A python list containing facial landmark indicies.
     
-    Returns:
-        routes: a list of tuples containing overlapping points, forming a path."""
+    Returns
+    -------
+        
+    routes: list of tuple
+        A list of tuples containing overlapping points, forming a path.
+    """
     
     # Connvert the input list to a two-column dataframe
     landmark_dataframe = pd.DataFrame([(landmark_set[i], landmark_set[i+1]) for i in range(len(landmark_set) - 1)], columns=['p1', 'p2'])
@@ -77,24 +86,34 @@ OCCLUSION_FILL_BLACK = 8
 OCCLUSION_FILL_MEAN = 9
 OCCLUSION_FILL_BAR = 10
 
-def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
+def get_min_max_bgr(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
-        values of the focus color. 
+    values of the focus color. 
     
-        Args:
-            filePath: String
-                The path string of the location of the file to be processed.
-            
-            focusColor: int | String
-                The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.
+    Parameters
+    ----------
+
+    filePath: str
+        The path string of the location of the file to be processed.
+    
+    focusColor: int, str
+        The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.
         
-        Raises:
-            TypeError: given invalid parameter types.
-            ValueError: given a nonexisting file path, or a non RGB focus color.
+    Raises
+    ------
+    
+    TypeError 
+        Given invalid parameter types.
+    ValueError 
+        Given a nonexisting file path, or a non RGB focus color.
         
-        Returns:
-            min_color: ndarray[int]
-            max_color: ndarray[int]
+    Returns
+    -------
+
+    min_color: array of int
+        A BGR colour code (ie. (100, 105, 80)) containing the minimum value of the focus color.
+    max_color: array of int
+        A BGR colour code (ie. (100, 105, 80)) containing the minimum value of the focus color.
     """
 
     global COLOR_RED
@@ -186,6 +205,29 @@ def get_min_max_rgb(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     return (min_color, max_color)
 
 def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = False) -> None:
+    """ Given an input directory containing one or more video files, transcodes all video files from their current
+    container to mp4. This function can be used to preprocess older video file types before masking, occluding or color shifting.
+
+    Parameters
+    ----------
+
+    input_dir: str
+        A path string to the directory containing the videos to be transcoded.
+    
+    output_dir: str
+        A path string to the directory where transcoded videos will be written too.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating if the input directory contains sub-directories.
+    
+    Raises
+    ------
+
+    TypeError
+        Given invalid parameter types.
+    OSError
+        Given invalid paths for input_dir or output_dir.
+    """
 
     # Type checking input parameters
     singleFile = False
@@ -208,7 +250,7 @@ def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = F
     if singleFile:
         files_to_process.append(input_dir)
     elif not with_sub_dirs:
-         files_to_process = os.listdir(input_dir)
+        files_to_process = [input_dir + "\\" + file for file in os.listdir(input_dir)]
     else:
         files_to_process = [os.path.join(path, file) 
                             for path, dirs, files in os.walk(input_dir, topdown=True) 

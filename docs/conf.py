@@ -19,12 +19,9 @@ extensions = [
     'sphinx.ext.viewcode',  
     'sphinx.ext.intersphinx',  
     'sphinx.ext.todo',
-    'numpy',
-    'mediapipe',
-    'opencv-python',
-    'pandas'  
 ]
 
+autodoc_mock_imports = []
 napoleon_google_doctrings = False
 templates_path = ['_templates']
 exclude_patterns = ['.\\data', '.\\source\\processing_script.py', '.\\source\\OpenCV_References']

@@ -1,4 +1,4 @@
-import source.PsyFace as fi
+import PsyFace as fi
 from utils import *
 import numpy as np
 import os
