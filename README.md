@@ -23,8 +23,11 @@ out_dir = ".\<your output directory>"
 pf.occlude_face_region(input_dir = in_dir, output_dir = out_dir, landmarks_to_occlude = [LEFT_EYE_PATH, RIGHT_EYE_PATH], occlusion_fill = OCCLUSION_FILL_BAR)
 ```
 
-<img src="images/portrait.jpg", alt="Unprocessed Image", width="150">
-<img src="images/portrait_occluded.jpg", alt="Occluded Image", width="150">
+### Before
+![Unprocessed Image](images/portrait.jpg)
+
+### After
+![Occluded Image](images/portrait_occluded.jpg)
 
 ## Documentation and Changelog
 
@@ -38,6 +41,6 @@ PsyFace is a young project, and it is still far from perfect! If you have any id
 
 Pull requests are always welcome. If you spot a mistake, error, or inefficiency within the source code, let us know!
 
-## license
+## License
 
 [MIT](https://opensource.org/license/mit)
