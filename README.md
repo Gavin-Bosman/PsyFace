@@ -41,6 +41,6 @@ PsyFace is a young project, and it is still far from perfect! If you have any id
 
 Pull requests are always welcome. If you spot a mistake, error, or inefficiency within the source code, let us know!
 
-## license
+## License
 
 [MIT](https://opensource.org/license/mit)
