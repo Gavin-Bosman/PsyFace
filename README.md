@@ -23,8 +23,11 @@ out_dir = ".\<your output directory>"
 pf.occlude_face_region(input_dir = in_dir, output_dir = out_dir, landmarks_to_occlude = [LEFT_EYE_PATH, RIGHT_EYE_PATH], occlusion_fill = OCCLUSION_FILL_BAR)
 ```
 
-<img src="images/portrait.jpg", alt="Unprocessed Image", width="150">
-<img src="images/portrait_occluded.jpg", alt="Occluded Image", width="150">
+### Before
+![Unprocessed Image](images/portrait.jpg)
+
+### After
+![Occluded Image](images/portrait_occluded.jpg)
 
 ## Documentation and Changelog
 
