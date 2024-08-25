@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 - v0.5 unit testing
 - v1.0 gui preview prior to file processing
 
+## [0.4.2] - 2024-08-24
+
+### Added
+
+- Sphinx dependency for autodocumentation.
+- Rst files defining the documentation build. 
+
+### Changed
+
+- Updated readme.md with examples, licenses and link to documentation page
+
+### Removed
+
 ## [0.4.1] - 2024-08-18
 
 ### Added

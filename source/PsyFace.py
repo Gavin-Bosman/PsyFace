@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import sys
 from typing import Callable
-from source.utils import *
+from psyfaceutils import *
 
 def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
