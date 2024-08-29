@@ -15,3 +15,11 @@ formats:
 python:
   install:
   - requirements: docs/requirements.txt
+
+python: 
+  install:
+  - method: pip
+    path: ./source/psyface
+    extra_requirements:
+      -  psyface.py
+      -  psyfaceutils.py
