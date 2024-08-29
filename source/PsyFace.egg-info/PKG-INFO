@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: PsyFace
+Version: 0.4.2
+Requires-Python: >=3.9
+License-File: LICENSE.txt
+Requires-Dist: opencv-python
+Requires-Dist: mediapipe
+Requires-Dist: pandas
+Requires-Dist: sphinx
+Requires-Dist: sphinx_rtd_theme
+Requires-Dist: numpy==2.0.0

@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../">
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>source.psyface &mdash; PsyFace 0.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>source.psyface.psyface &mdash; PsyFace 0.4.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=ff822928"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=ff822928"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -30,14 +30,14 @@
 
           
           
-          <a href="../../index.html" class="icon icon-home">
+          <a href="../../../index.html" class="icon icon-home">
             PsyFace
           </a>
               <div class="version">
                 0.4
               </div>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -46,10 +46,10 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../masking_doc.html">Facial masking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../occluding_doc.html">Facial occlusion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../color_shift_doc.html">Facial colour manipulation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../utils_doc.html">Other Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../masking_doc.html">Facial masking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../occluding_doc.html">Facial occlusion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../color_shift_doc.html">Facial colour manipulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils_doc.html">Other Utilities</a></li>
 </ul>
 
         </div>
@@ -58,16 +58,16 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">PsyFace</a>
+          <a href="../../../index.html">PsyFace</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">source.psyface</li>
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">source.psyface.psyface</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -76,7 +76,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for source.psyface</h1><div class="highlight"><pre>
+  <h1>Source code for source.psyface.psyface</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">cv2</span> <span class="k">as</span> <span class="nn">cv</span>
 <span class="kn">import</span> <span class="nn">cv2.typing</span>
 <span class="kn">import</span> <span class="nn">mediapipe</span> <span class="k">as</span> <span class="nn">mp</span>
@@ -86,9 +86,10 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span> <span class="nn">.psyfaceutils</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="c1">###### this import of my own module is causing errors with sphinx</span>
 
 <div class="viewcode-block" id="mask_face_region">
-<a class="viewcode-back" href="../../masking_doc.html#source.psyface.mask_face_region">[docs]</a>
+<a class="viewcode-back" href="../../../masking_doc.html#source.psyface.psyface.mask_face_region">[docs]</a>
 <span class="k">def</span> <span class="nf">mask_face_region</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">mask_type</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="n">FACE_SKIN_ISOLATION</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                      <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.</span>
@@ -462,8 +463,6 @@
                 <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="occlude_face_region">
-<a class="viewcode-back" href="../../occluding_doc.html#source.psyface.occlude_face_region">[docs]</a>
 <span class="k">def</span> <span class="nf">occlude_face_region</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">landmarks_to_occlude</span><span class="p">:</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span> <span class="n">occlusion_fill</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="n">OCCLUSION_FILL_BLACK</span><span class="p">,</span>
                         <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span>  <span class="kc">False</span><span class="p">,</span> <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> 
                         <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -760,11 +759,8 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">static_image_mode</span><span class="p">:</span>
             <span class="n">capture</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
+            <span class="n">result</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 
-
-<div class="viewcode-block" id="extract_color_channel_means">
-<a class="viewcode-back" href="../../color_shift_doc.html#source.psyface.extract_color_channel_means">[docs]</a>
 <span class="k">def</span> <span class="nf">extract_color_channel_means</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">color_space</span><span class="p">:</span> <span class="nb">int</span><span class="o">|</span><span class="nb">str</span> <span class="o">=</span> <span class="n">COLOR_SPACE_RGB</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
                                 <span class="n">mask_face</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory </span>
@@ -970,11 +966,8 @@
                 <span class="n">csv</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">timestamp</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     
     <span class="n">capture</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-    <span class="n">csv</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="n">csv</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-
-<div class="viewcode-block" id="shift_color_temp">
-<a class="viewcode-back" href="../../color_shift_doc.html#source.psyface.shift_color_temp">[docs]</a>
 <span class="k">def</span> <span class="nf">shift_color_temp</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">cv2</span><span class="o">.</span><span class="n">typing</span><span class="o">.</span><span class="n">MatLike</span><span class="p">,</span> <span class="n">img_mask</span><span class="p">:</span> <span class="n">cv2</span><span class="o">.</span><span class="n">typing</span><span class="o">.</span><span class="n">MatLike</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">shift_weight</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_color_shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">8.0</span><span class="p">,</span> 
                     <span class="n">max_sat_shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">shift_color</span><span class="p">:</span> <span class="nb">str</span><span class="o">|</span><span class="nb">int</span> <span class="o">=</span> <span class="n">COLOR_RED</span><span class="p">,</span> <span class="n">sat_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cv2</span><span class="o">.</span><span class="n">typing</span><span class="o">.</span><span class="n">MatLike</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) </span>
@@ -1095,11 +1088,8 @@
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img_hsv</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">cv</span><span class="o">.</span><span class="n">COLOR_HSV2BGR</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">return</span> <span class="n">result</span>
 
-
-<div class="viewcode-block" id="face_color_shift">
-<a class="viewcode-back" href="../../color_shift_doc.html#source.psyface.face_color_shift">[docs]</a>
 <span class="k">def</span> <span class="nf">face_color_shift</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">onset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">max_color_shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">8.0</span><span class="p">,</span> <span class="n">max_sat_shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
                      <span class="n">timing_func</span><span class="p">:</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">shift_color</span><span class="p">:</span><span class="nb">str</span><span class="o">|</span><span class="nb">int</span> <span class="o">=</span> <span class="n">COLOR_RED</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">sat_only</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                      <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> 
@@ -1447,8 +1437,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">static_image_mode</span><span class="p">:</span>
             <span class="n">capture</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
-
+            <span class="n">result</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 </pre></div>
 
            </div>

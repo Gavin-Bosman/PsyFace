@@ -6,14 +6,14 @@ This section contains various helper methods that can be utilised alongside any 
 Create_path()
 -------------
 
-.. autofunction:: psyfaceutils.create_path
+.. autofunction:: source.psyface.psyfaceutils.create_path
 
 Get_min_max_rgb()
 -----------------
 
-.. autofunction:: psyfaceutils.get_min_max_bgr
+.. autofunction:: source.psyface.psyfaceutils.get_min_max_bgr
 
 Transcode_video_to_mp4()
 ------------------------
 
-.. autofunction:: psyfaceutils.transcode_video_to_mp4
+.. autofunction:: source.psyface.psyfaceutils.transcode_video_to_mp4

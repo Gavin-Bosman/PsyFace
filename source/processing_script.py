@@ -1,5 +1,5 @@
-import psyface as pf
-from psyfaceutils import *
+import psyface.psyface as pf
+from psyface.psyfaceutils import *
 import os
 
 
