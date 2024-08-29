@@ -19,7 +19,7 @@ python:
 python: 
   install:
   - method: pip
-    path: ./source/psyface
+    path: .
     extra_requirements:
-      -  psyface.py
-      -  psyfaceutils.py
+      -  source/psyface.py
+      -  source/psyfaceutils.py
