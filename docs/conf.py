@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.abspath('..\\'))
 
 extensions = [
     'autoapi.extension',
-    'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',  
     'sphinx.ext.viewcode',  
     'sphinx.ext.intersphinx',  
@@ -24,6 +23,7 @@ extensions = [
 autoapi_dirs = ['../source/psyface']
 autoapi_generate_api_docs = False
 autoapi_keep_files = True
+
 napoleon_google_doctrings = False
 templates_path = ['_templates']
 exclude_patterns = ['./data', './source/processing_script.py', './source/OpenCV_References']
