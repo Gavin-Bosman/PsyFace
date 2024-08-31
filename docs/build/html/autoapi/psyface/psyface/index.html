@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psyface.psyface &mdash; PsyFace 0.4.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=ff822928"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="psyface.psyfaceutils" href="../psyfaceutils/index.html" />
+    <link rel="prev" title="Welcome to PsyFace’s documentation!" href="../../../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PsyFace
+          </a>
+              <div class="version">
+                0.4
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Package Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psyfaceutils/index.html">Utilities and Other</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PsyFace</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">psyface.psyface</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/psyface/psyface/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-psyface.psyface">
+<span id="psyface-psyface"></span><h1>psyface.psyface<a class="headerlink" href="#module-psyface.psyface" title="Link to this heading"></a></h1>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#psyface.psyface.mask_face_region" title="psyface.psyface.mask_face_region"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_face_region</span></code></a>(→ None)</p></td>
+<td><p>Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#psyface.psyface.occlude_face_region" title="psyface.psyface.occlude_face_region"><code class="xref py py-obj docutils literal notranslate"><span class="pre">occlude_face_region</span></code></a>(→ None)</p></td>
+<td><p>For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#psyface.psyface.extract_color_channel_means" title="psyface.psyface.extract_color_channel_means"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_color_channel_means</span></code></a>(→ None)</p></td>
+<td><p>Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#psyface.psyface.shift_color_temp" title="psyface.psyface.shift_color_temp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_color_temp</span></code></a>(→ cv2.typing.MatLike)</p></td>
+<td><p>Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#psyface.psyface.face_color_shift" title="psyface.psyface.face_color_shift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">face_color_shift</span></code></a>(→ None)</p></td>
+<td><p>For each video file contained in input_dir, the function applies a weighted color shift to the face region,</p></td>
+</tr>
+</tbody>
+</table>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyface.mask_face_region">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyface.</span></span><span class="sig-name descname"><span class="pre">mask_face_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">FACE_SKIN_ISOLATION</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_detection_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tracking_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_image_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#psyface.psyface.mask_face_region" title="Link to this definition"></a></dt>
+<dd><p>Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>str</em>) – A path string of the directory containing videos to process.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – A path string of the directory where processed videos will be written to.</p></li>
+<li><p><strong>mask_type</strong> (<em>int</em>) – An integer indicating the type of mask to apply to the input videos. This can be one of two options:
+either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.</p></li>
+<li><p><strong>with_sub_dirs</strong> (<em>bool</em>) – Indicates if the input directory contains subfolders.</p></li>
+<li><p><strong>min_detection_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>min_tracking_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>static_image_mode</strong> (<em>bool</em>) – A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+video frames.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – Given an unknown mask type.</p></li>
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>OSError:</strong> – Given invalid path strings for in/output directories</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyface.occlude_face_region">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyface.</span></span><span class="sig-name descname"><span class="pre">occlude_face_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">landmarks_to_occlude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occlusion_fill</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">OCCLUSION_FILL_BLACK</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_detection_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tracking_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_image_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#psyface.psyface.occlude_face_region" title="Link to this definition"></a></dt>
+<dd><p>For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude
+will be occluded with either black or the facial mean pixel value. Processed files are then output to Occluded_Video_Output
+within the specified output directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>str</em>) – A path string to the directory containing files to process.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – A path string to the directory where processed videos will be written.</p></li>
+<li><p><strong>landmarks_to_occlude</strong> (<em>list</em><em> of </em><em>list</em><em>, </em><em>list</em><em> of </em><em>tuple</em>) – A list of facial landmark paths, either created by the user using utils.create_path(), or selected from the
+predefined set of facial landmark paths.</p></li>
+<li><p><strong>occlusion_fill</strong> (<em>int</em>) – An integer flag indicating the fill method of the occluded landmark regions. One of OCCLUSION_FILL_BLACK or
+OCCLUSION_FILL_MEAN.</p></li>
+<li><p><strong>with_sub_dirs</strong> (<em>bool</em>) – A boolean flag indicating if the input directory contains subfolders.</p></li>
+<li><p><strong>min_detection_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>min_tracking_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>static_image_mode</strong> (<em>bool</em>) – A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+video frames.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>ValueError</strong> – Given invalid landmark sets or unrecognized fill options.</p></li>
+<li><p><strong>OSError</strong> – Given invalid path strings to either input_dir or output_dir.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyface.extract_color_channel_means">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyface.</span></span><span class="sig-name descname"><span class="pre">extract_color_channel_means</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">COLOR_SPACE_RGB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_detection_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tracking_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#psyface.psyface.extract_color_channel_means" title="Link to this definition"></a></dt>
+<dd><p>Extracts and outputs mean values of each color channel from the specified color space. Creates a new directory
+‘CSV_Output’, where a csv file will be written for each input video file provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>str</em>) – A path string to a directory containing the video files to be processed.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – A path string to a directory where outputted csv files will be written to.</p></li>
+<li><p><strong>color_space</strong> (<em>int</em><em>, </em><em>str</em>) – A specifier for which color space to operate in.</p></li>
+<li><p><strong>with_sub_dirs</strong> (<em>bool</em>) – Indicates whether the input directory contains subfolders.</p></li>
+<li><p><strong>mask_face</strong> (<em>bool</em>) – Indicates whether to mask the face region prior to extracting color means.</p></li>
+<li><p><strong>min_detection_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>min_tracking_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>ValueError</strong> – Given an unrecognized color space.</p></li>
+<li><p><strong>OSError</strong> – If input or output directories are invalid paths.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyface.shift_color_temp">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyface.</span></span><span class="sig-name descname"><span class="pre">shift_color_temp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">cv2.typing.MatLike</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">cv2.typing.MatLike</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_color_shift</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_sat_shift</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">COLOR_RED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sat_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">cv2.typing.MatLike</span></span></span><a class="headerlink" href="#psyface.psyface.shift_color_temp" title="Link to this definition"></a></dt>
+<dd><p>Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift)
+units in the masked region of the image. This function makes use of the CIE Lab* perceptually uniform color space to
+perform natural looking color shifts on the face.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>Matlike</em>) – An input still image or video frame.</p></li>
+<li><p><strong>img_mask</strong> (<em>Matlike</em>) – A binary image with the same shape as img.</p></li>
+<li><p><strong>shift_weight</strong> (<em>float</em>) – The current shifting weight; a float in the range [0,1] returned from a timing function.</p></li>
+<li><p><strong>max_color_shift</strong> (<em>float</em>) – The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.</p></li>
+<li><p><strong>max_sat_shift</strong> (<em>float</em>) – The maximum units to shift the images saturation by.</p></li>
+<li><p><strong>shift_color</strong> (<em>str</em><em>, </em><em>int</em>) – An integer or string literal specifying which color will be applied to the input image.</p></li>
+<li><p><strong>sat_only</strong> (<em>bool</em>) – A boolean flag that indicates if only the saturation is being modified.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – On invalid input parameter types.</p></li>
+<li><p><strong>ValueError</strong> – If an undefined color value is passed, or non-matching image and mask shapes are provided.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – The input image, color-shifted in the region specified by the input mask.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matlike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyface.face_color_shift">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyface.</span></span><span class="sig-name descname"><span class="pre">face_color_shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">onset_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_color_shift</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_sat_shift</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timing_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="pre">Ellipsis</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">sigmoid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">COLOR_RED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sat_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_detection_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tracking_confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_image_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#psyface.psyface.face_color_shift" title="Link to this definition"></a></dt>
+<dd><p>For each video file contained in input_dir, the function applies a weighted color shift to the face region,
+outputting each resulting video to output_dir. Weights are calculated using a passed timing function, that returns
+a float in the normalised range [0,1].</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>There is currently no checking or error handling performed to ensure that timing function outputs are normalised.
+Passing in a timing function with non-normalised outputs will lead to unexpected behaviour.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>str</em>) – A path string to the directory containing input video files.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – A path string to the directory where outputted video files will be saved.</p></li>
+<li><p><strong>onset_t</strong> (<em>float</em>) – The onset time of the colour shifting.</p></li>
+<li><p><strong>offset_t</strong> (<em>float</em>) – The offset time of the colour shifting.</p></li>
+<li><p><strong>max_color_shift</strong> (<em>float</em>) – The maximum units to shift the colour temperature by, during peak onset.</p></li>
+<li><p><strong>max_sat_shift</strong> (<em>float</em>) – The maximum units to shift the images saturation by, during peak onset.</p></li>
+<li><p><strong>timingFunc</strong> (<em>Function</em><em>(</em><em>) </em><em>-&gt; float</em>) – Any function that takes at least one input float (time), and returns a float.</p></li>
+<li><p><strong>shift_color</strong> (<em>str</em><em>, </em><em>int</em>) – Either a string literal specifying the color of choice, or a predefined integer constant.</p></li>
+<li><p><strong>with_sub_dirs</strong> (<em>bool</em>) – A boolean flag indicating whether the input directory contains nested directories.</p></li>
+<li><p><strong>sat_only</strong> (<em>bool</em>) – A boolean flag indicating if only the saturation of the input file will be shifted.</p></li>
+<li><p><strong>min_detection_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>min_tracking_confidence</strong> (<em>float</em>) – A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe
+FaceMesh constructor.</p></li>
+<li><p><strong>static_image_mode</strong> (<em>bool</em>) – A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
+video frames.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>OSError</strong> – Given invalid directory paths.</p></li>
+<li><p><strong>ValueError:</strong> – If provided timing_func does not return a normalised float value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../../index.html" class="btn btn-neutral float-left" title="Welcome to PsyFace’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../psyfaceutils/index.html" class="btn btn-neutral float-right" title="psyface.psyfaceutils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gavin Bosman.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

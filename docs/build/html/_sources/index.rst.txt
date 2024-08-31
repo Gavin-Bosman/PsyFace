@@ -9,10 +9,8 @@ Welcome to PsyFace's documentation!
    :caption: Contents:
    :titlesonly:
 
-   Facial masking <masking_doc>
-   Facial occlusion <occluding_doc>
-   Facial colour manipulation <color_shift_doc>
-   Other Utilities <utils_doc>
+   Core Package Functionality </autoapi/psyface/psyface/index>
+   Utilities and Extra Tools </autoapi/psyface/psyfaceutils/index>
 
 Indices and tables
 ==================

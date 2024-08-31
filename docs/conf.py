@@ -13,18 +13,20 @@ sys.path.insert(0, os.path.abspath('..\\'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    'autoapi.extension',
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosectionlabel',
     'sphinx.ext.napoleon',  
     'sphinx.ext.viewcode',  
     'sphinx.ext.intersphinx',  
     'sphinx.ext.todo',
 ]
 
-autodoc_mock_imports = []
+autoapi_dirs = ['../source/psyface']
+autoapi_generate_api_docs = False
+autoapi_keep_files = True
 napoleon_google_doctrings = False
 templates_path = ['_templates']
-exclude_patterns = ['.\\data', '.\\source\\processing_script.py', '.\\source\\OpenCV_References']
+exclude_patterns = ['./data', './source/processing_script.py', './source/OpenCV_References']
 root_doc = 'index'
 
 # -- Options for HTML output -------------------------------------------------

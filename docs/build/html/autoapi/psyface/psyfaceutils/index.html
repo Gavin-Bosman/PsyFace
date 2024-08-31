@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psyface.psyfaceutils &mdash; PsyFace 0.4.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=ff822928"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="prev" title="psyface.psyface" href="../psyface/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PsyFace
+          </a>
+              <div class="version">
+                0.4
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../psyface/index.html">Core Package Functionality</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities and Other</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PsyFace</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">psyface.psyfaceutils</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/psyface/psyfaceutils/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-psyface.psyfaceutils">
+<span id="psyface-psyfaceutils"></span><h1>psyface.psyfaceutils<a class="headerlink" href="#module-psyface.psyfaceutils" title="Link to this heading"></a></h1>
+<section id="module-summary">
+<h2>Module Summary<a class="headerlink" href="#module-summary" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#psyface.psyfaceutils.create_path" title="psyface.psyfaceutils.create_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_path</span></code></a>(→ list[tuple])</p></td>
+<td><p>Given a list of facial landmarks (int), returns a list of tuples, creating a closed path in the form</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#psyface.psyfaceutils.get_min_max_bgr" title="psyface.psyfaceutils.get_min_max_bgr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_max_bgr</span></code></a>(→ tuple)</p></td>
+<td><p>Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#psyface.psyfaceutils.transcode_video_to_mp4" title="psyface.psyfaceutils.transcode_video_to_mp4"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transcode_video_to_mp4</span></code></a>(→ None)</p></td>
+<td><p>Given an input directory containing one or more video files, transcodes all video files from their current</p></td>
+</tr>
+</tbody>
+</table>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.create_path">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">create_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">landmark_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#psyface.psyfaceutils.create_path" title="Link to this definition"></a></dt>
+<dd><p>Given a list of facial landmarks (int), returns a list of tuples, creating a closed path in the form
+[(a,b), (b,c), (c,d), …]. This function allows the user to create custom facial landmark sets, for use in
+mask_face_region() and occlude_face_region().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>landmark_set</strong> (<em>list</em><em> of </em><em>int</em>) – A python list containing facial landmark indicies.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>routes</strong> – A list of tuples containing overlapping points, forming a path.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.transcode_video_to_mp4">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">transcode_video_to_mp4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#psyface.psyfaceutils.transcode_video_to_mp4" title="Link to this definition"></a></dt>
+<dd><p>Given an input directory containing one or more video files, transcodes all video files from their current
+container to mp4. This function can be used to preprocess older video file types before masking, occluding or color shifting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>str</em>) – A path string to the directory containing the videos to be transcoded.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – A path string to the directory where transcoded videos will be written too.</p></li>
+<li><p><strong>with_sub_dirs</strong> (<em>bool</em>) – A boolean flag indicating if the input directory contains sub-directories.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>OSError</strong> – Given invalid paths for input_dir or output_dir.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.get_min_max_bgr">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">get_min_max_bgr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focusColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">COLOR_RED</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#psyface.psyfaceutils.get_min_max_bgr" title="Link to this definition"></a></dt>
+<dd><p>Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum
+values of the focus color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filePath</strong> (<em>str</em>) – The path string of the location of the file to be processed.</p></li>
+<li><p><strong>focusColor</strong> (<em>int</em><em>, </em><em>str</em>) – The RGB color channel to focus on. Either one of the predefined color constants, or a string literal of the colors name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – Given invalid parameter types.</p></li>
+<li><p><strong>ValueError</strong> – Given a nonexisting file path, or a non RGB focus color.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>min_color</strong> (<em>array of int</em>) – A BGR colour code (ie. (100, 105, 80)) containing the minimum value of the focus color.</p></li>
+<li><p><strong>max_color</strong> (<em>array of int</em>) – A BGR colour code (ie. (100, 105, 80)) containing the minimum value of the focus color.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="predefined-constants-and-formatting-options">
+<h3>Predefined Constants and Formatting Options<a class="headerlink" href="#predefined-constants-and-formatting-options" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="facial-landmark-sets">
+<h2>Facial Landmark Sets<a class="headerlink" href="#facial-landmark-sets" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The following landmark indice sets are for use with the create_path() function. Predefined landmark paths are also
+available, but these indice sets provide quick and easy reference for the MediaPipe Facial Landmarker.</p>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.LEFT_EYE_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">LEFT_EYE_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[301,</span> <span class="pre">334,</span> <span class="pre">296,</span> <span class="pre">336,</span> <span class="pre">285,</span> <span class="pre">413,</span> <span class="pre">464,</span> <span class="pre">453,</span> <span class="pre">452,</span> <span class="pre">451,</span> <span class="pre">450,</span> <span class="pre">449,</span> <span class="pre">448,</span> <span class="pre">261,</span> <span class="pre">265,</span> <span class="pre">383,</span> <span class="pre">301]</span></em><a class="headerlink" href="#psyface.psyfaceutils.LEFT_EYE_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.LEFT_IRIS_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">LEFT_IRIS_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[263,</span> <span class="pre">249,</span> <span class="pre">390,</span> <span class="pre">373,</span> <span class="pre">374,</span> <span class="pre">380,</span> <span class="pre">381,</span> <span class="pre">382,</span> <span class="pre">362,</span> <span class="pre">398,</span> <span class="pre">384,</span> <span class="pre">385,</span> <span class="pre">386,</span> <span class="pre">387,</span> <span class="pre">388,</span> <span class="pre">466,</span> <span class="pre">263]</span></em><a class="headerlink" href="#psyface.psyfaceutils.LEFT_IRIS_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.RIGHT_EYE_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">RIGHT_EYE_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[71,</span> <span class="pre">105,</span> <span class="pre">66,</span> <span class="pre">107,</span> <span class="pre">55,</span> <span class="pre">189,</span> <span class="pre">244,</span> <span class="pre">233,</span> <span class="pre">232,</span> <span class="pre">231,</span> <span class="pre">230,</span> <span class="pre">229,</span> <span class="pre">228,</span> <span class="pre">31,</span> <span class="pre">35,</span> <span class="pre">156,</span> <span class="pre">71]</span></em><a class="headerlink" href="#psyface.psyfaceutils.RIGHT_EYE_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.RIGHT_IRIS_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">RIGHT_IRIS_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[33,</span> <span class="pre">7,</span> <span class="pre">163,</span> <span class="pre">144,</span> <span class="pre">153,</span> <span class="pre">154,</span> <span class="pre">155,</span> <span class="pre">133,</span> <span class="pre">173,</span> <span class="pre">157,</span> <span class="pre">158,</span> <span class="pre">159,</span> <span class="pre">160,</span> <span class="pre">161,</span> <span class="pre">246,</span> <span class="pre">33]</span></em><a class="headerlink" href="#psyface.psyfaceutils.RIGHT_IRIS_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.NOSE_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">NOSE_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[168,</span> <span class="pre">193,</span> <span class="pre">122,</span> <span class="pre">196,</span> <span class="pre">3,</span> <span class="pre">198,</span> <span class="pre">49,</span> <span class="pre">203,</span> <span class="pre">167,</span> <span class="pre">164,</span> <span class="pre">393,</span> <span class="pre">423,</span> <span class="pre">279,</span> <span class="pre">420,</span> <span class="pre">248,</span> <span class="pre">419,</span> <span class="pre">351,</span> <span class="pre">417,</span> <span class="pre">168]</span></em><a class="headerlink" href="#psyface.psyfaceutils.NOSE_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.LIPS_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">LIPS_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[164,</span> <span class="pre">393,</span> <span class="pre">391,</span> <span class="pre">322,</span> <span class="pre">410,</span> <span class="pre">287,</span> <span class="pre">273,</span> <span class="pre">335,</span> <span class="pre">406,</span> <span class="pre">313,</span> <span class="pre">18,</span> <span class="pre">83,</span> <span class="pre">182,</span> <span class="pre">106,</span> <span class="pre">43,</span> <span class="pre">57,</span> <span class="pre">186,</span> <span class="pre">92,</span> <span class="pre">165,</span> <span class="pre">167,</span> <span class="pre">164]</span></em><a class="headerlink" href="#psyface.psyfaceutils.LIPS_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.LIPS_TIGHT_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">LIPS_TIGHT_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[61,</span> <span class="pre">146,</span> <span class="pre">91,</span> <span class="pre">181,</span> <span class="pre">84,</span> <span class="pre">17,</span> <span class="pre">314,</span> <span class="pre">405,</span> <span class="pre">321,</span> <span class="pre">375,</span> <span class="pre">291,</span> <span class="pre">409,</span> <span class="pre">270,</span> <span class="pre">269,</span> <span class="pre">0,</span> <span class="pre">37,</span> <span class="pre">39,</span> <span class="pre">40,</span> <span class="pre">185,</span> <span class="pre">61]</span></em><a class="headerlink" href="#psyface.psyfaceutils.LIPS_TIGHT_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.FACE_OVAL_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">FACE_OVAL_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[10,</span> <span class="pre">338,</span> <span class="pre">297,</span> <span class="pre">332,</span> <span class="pre">284,</span> <span class="pre">251,</span> <span class="pre">389,</span> <span class="pre">356,</span> <span class="pre">454,</span> <span class="pre">323,</span> <span class="pre">361,</span> <span class="pre">288,</span> <span class="pre">397,</span> <span class="pre">365,</span> <span class="pre">379,</span> <span class="pre">378,</span> <span class="pre">400,</span> <span class="pre">377,</span> <span class="pre">152,...</span></em><a class="headerlink" href="#psyface.psyfaceutils.FACE_OVAL_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.FACE_OVAL_TIGHT_IDX">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">FACE_OVAL_TIGHT_IDX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[10,</span> <span class="pre">338,</span> <span class="pre">297,</span> <span class="pre">332,</span> <span class="pre">284,</span> <span class="pre">251,</span> <span class="pre">389,</span> <span class="pre">356,</span> <span class="pre">345,</span> <span class="pre">352,</span> <span class="pre">376,</span> <span class="pre">433,</span> <span class="pre">397,</span> <span class="pre">365,</span> <span class="pre">379,</span> <span class="pre">378,</span> <span class="pre">400,</span> <span class="pre">377,</span> <span class="pre">152,...</span></em><a class="headerlink" href="#psyface.psyfaceutils.FACE_OVAL_TIGHT_IDX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>PsyFace’s predefined landmark paths use the same naming convention as the indice lists, but are appended with
+‘_PATH’ rather than ‘_IDX’. For every landmark indice set there is a landmark path of the same prefix.</p>
+</div>
+</section>
+<section id="masking-options">
+<h2>Masking Options<a class="headerlink" href="#masking-options" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.FACE_OVAL">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">FACE_OVAL</span></span><a class="headerlink" href="#psyface.psyfaceutils.FACE_OVAL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.FACE_OVAL_TIGHT">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">FACE_OVAL_TIGHT</span></span><a class="headerlink" href="#psyface.psyfaceutils.FACE_OVAL_TIGHT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.FACE_SKIN_ISOLATION">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">FACE_SKIN_ISOLATION</span></span><a class="headerlink" href="#psyface.psyfaceutils.FACE_SKIN_ISOLATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.MASK_OPTIONS">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">MASK_OPTIONS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['FACE_OVAL',</span> <span class="pre">'FACE_OVAL_TIGHT',</span> <span class="pre">'FACE_SKIN_ISOLATION']</span></em><a class="headerlink" href="#psyface.psyfaceutils.MASK_OPTIONS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="color-options">
+<h2>Color Options<a class="headerlink" href="#color-options" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_SPACE_RGB">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_SPACE_RGB</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_SPACE_RGB" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_SPACE_HSV">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_SPACE_HSV</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_SPACE_HSV" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_SPACE_GRAYSCALE">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_SPACE_GRAYSCALE</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_SPACE_GRAYSCALE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_SPACES">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_SPACES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['COLOR_SPACE_RGB',</span> <span class="pre">'COLOR_SPACE_HSV',</span> <span class="pre">'COLOR_SPACE_GRAYSCALE']</span></em><a class="headerlink" href="#psyface.psyfaceutils.COLOR_SPACES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_RED">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_RED</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_RED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_BLUE">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_BLUE</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_BLUE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_GREEN">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_GREEN</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_GREEN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.COLOR_YELLOW">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">COLOR_YELLOW</span></span><a class="headerlink" href="#psyface.psyfaceutils.COLOR_YELLOW" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="occlusion-fill-options">
+<h2>Occlusion Fill Options<a class="headerlink" href="#occlusion-fill-options" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.OCCLUSION_FILL_BLACK">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">OCCLUSION_FILL_BLACK</span></span><a class="headerlink" href="#psyface.psyfaceutils.OCCLUSION_FILL_BLACK" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.OCCLUSION_FILL_MEAN">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">OCCLUSION_FILL_MEAN</span></span><a class="headerlink" href="#psyface.psyfaceutils.OCCLUSION_FILL_MEAN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="psyface.psyfaceutils.OCCLUSION_FILL_BAR">
+<span class="sig-prename descclassname"><span class="pre">psyface.psyfaceutils.</span></span><span class="sig-name descname"><span class="pre">OCCLUSION_FILL_BAR</span></span><a class="headerlink" href="#psyface.psyfaceutils.OCCLUSION_FILL_BAR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../psyface/index.html" class="btn btn-neutral float-left" title="psyface.psyface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gavin Bosman.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
