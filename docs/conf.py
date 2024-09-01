@@ -16,8 +16,7 @@ extensions = [
     'autoapi.extension',
     'sphinx.ext.napoleon',  
     'sphinx.ext.viewcode',  
-    'sphinx.ext.intersphinx',  
-    'sphinx.ext.todo',
+    'sphinx.ext.intersphinx',
 ]
 
 autoapi_dirs = ['../source/psyface']
