@@ -1,12 +1,11 @@
 psyface.psyfaceutils
 ====================
 
-.. currentmodule:: source.psyface
-
 
 Module Summary
 ^^^^^^^^^^^^^^
 
+.. currentmodule:: source.psyface
 .. autosummary::
    :nosignatures:
 
@@ -17,7 +16,6 @@ Module Summary
 
 Functions
 ---------
-
 
 .. py:function:: create_path(landmark_set: list[int]) -> list[tuple]
 

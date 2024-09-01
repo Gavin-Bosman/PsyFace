@@ -7,7 +7,7 @@ author = 'Gavin Bosman'
 version = '0.4'
 release = '0.4.2'
 import os, sys
-sys.path.insert(0, os.path.abspath('..\\'))
+sys.path.insert(0, os.path.abspath('../source/psyface'))
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

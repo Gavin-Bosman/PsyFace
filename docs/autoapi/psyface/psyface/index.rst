@@ -1,12 +1,11 @@
 psyface.psyface
 ===============
 
-.. currentmodule:: source.psyface
-
 
 Module Summary
 ^^^^^^^^^^^^^^
 
+.. currentmodule:: source.psyface
 .. autosummary::
    :nosignatures:
 
@@ -19,7 +18,6 @@ Module Summary
 
 Functions
 ---------
-
 
 .. py:function:: mask_face_region(input_dir: str, output_dir: str, mask_type: int = FACE_SKIN_ISOLATION, with_sub_dirs: bool = False, min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5, static_image_mode: bool = False) -> None
 
