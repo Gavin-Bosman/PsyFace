@@ -1,15 +1,20 @@
 psyface.psyface
 ===============
 
-.. py:module:: psyface.psyface
+.. currentmodule:: source.psyface
 
-.. autoapisummary::
 
-   psyface.psyface.mask_face_region
-   psyface.psyface.occlude_face_region
-   psyface.psyface.extract_color_channel_means
-   psyface.psyface.shift_color_temp
-   psyface.psyface.face_color_shift
+Module Summary
+^^^^^^^^^^^^^^
+
+.. autosummary::
+   :nosignatures:
+
+   psyface.mask_face_region
+   psyface.occlude_face_region
+   psyface.extract_color_channel_means
+   psyface.shift_color_temp
+   psyface.face_color_shift
 
 
 Functions

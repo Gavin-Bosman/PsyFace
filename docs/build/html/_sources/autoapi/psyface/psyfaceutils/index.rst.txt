@@ -1,18 +1,18 @@
 psyface.psyfaceutils
 ====================
 
-.. py:module:: psyface.psyfaceutils
+.. currentmodule:: source.psyface
 
 
 Module Summary
 ^^^^^^^^^^^^^^
 
+.. autosummary::
+   :nosignatures:
 
-.. autoapisummary::
-
-   psyface.psyfaceutils.create_path
-   psyface.psyfaceutils.get_min_max_bgr
-   psyface.psyfaceutils.transcode_video_to_mp4
+   psyfaceutils.create_path
+   psyfaceutils.get_min_max_bgr
+   psyfaceutils.transcode_video_to_mp4
 
 
 Functions

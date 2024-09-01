@@ -13,15 +13,18 @@ sys.path.insert(0, os.path.abspath('..\\'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'autoapi.extension',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',  
     'sphinx.ext.viewcode',  
     'sphinx.ext.intersphinx',
 ]
 
-autoapi_dirs = ['../source/psyface']
-autoapi_generate_api_docs = False
-autoapi_keep_files = True
+#autoapi_dirs = ['../source/psyface']
+#autoapi_generate_api_docs = False
+#autoapi_keep_files = True
+
+autosummary_generate = False
 
 napoleon_google_doctrings = False
 templates_path = ['_templates']
