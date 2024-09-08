@@ -283,5 +283,29 @@ def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = F
 
 
 # Defining useful timing functions
-def sigmoid(x:float, k:float = 1.0) -> float:
-    return 1/(1 + np.exp(-k * x))
+def sigmoid(t:float, k:float = 1.0) -> float:
+    return 1/(1 + np.exp(-k * t))
+
+def linear(t:float, **kwargs) -> float:
+    ''' Normalised linear timing function.
+
+    Parameters
+    ----------
+
+    t: float
+        The current time value of the video file being processed.
+    
+    kwargs: dict
+        The linear timing function requires a start and end time, typically you will pass 0, and the video duration
+        as start and end values. 
+    
+    Returns
+    -------
+
+    weight: float
+    '''
+
+    start = kwargs["start"]
+    end = kwargs["end"]
+
+    return (t-start) / (end-start)

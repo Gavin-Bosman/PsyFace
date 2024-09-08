@@ -1,14 +1,14 @@
 # PsyFace
-[![Documentation Status](https://readthedocs.org/projects/gavin-bosman-psyface/badge/?version=latest)](https://gavin-bosman-psyface.readthedocs.io/en/latest/?badge=latest)
+PsyFace is a python package for dynamic region occlusion and skin colour modification of faces in video and images. Provides a range of tools for changing the colour of user-specified facial regions using industry-standard colour spaces (L*a*b, HSV, BGR), occlusion of user-defined facial regions (e.g., eyes, nose, mouth, hemi-face), and isolation of the head from background scene through video matting. Facial modifications can be further transitioned on and off through a range of timing functions (e.g., linear, sigmoid, Gaussian etc).
 
-A python tool kit for performing facial psychology experiments and analysis. This project is designed to allow psychology researchers to perform previously complex facial manipulation tasks in as little as 2 lines of code. 
+PsyFace enables researchers to apply complex facial manipulations to just the face in dynamic video and still images scenes in several lines of code.
+Here is an example of PsyFace performing pixel-level modifications to create new videos from the original one:
 
-## Underlying Model
-MediaPipe's Face Mesh task provides automated detection of 468 unique facial landmarks. By accessing the x-y screen coordinates of these landmarks, many complex image and video operations can be performed. 
+![PsyFace pixel-level Operations](./docs/images/pyplot_figure_2.png)
 
-[![MediaPipe FaceMesh](https://ai.google.dev/static/mediapipe/images/solutions/examples/face_landmark.png)](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker)
+## Statement of Need
 
-For more on mediapipe, see [here](https://ai.google.dev/edge/mediapipe/solutions/guide)
+Currently, there are no available tools for performing these types of pixel-level operations over videos. Existing research has commonly used general image editing tools (such as Photoshop). However, these tools apply changes to the entire image, causing noticeable background artifacts. PsyFace provides users the ability to selectively modify specific regions of the face, for both static images and videos. Our package also seamlessly integrates temporal functions into it's video processing, allowing users to specify how and when pixel-level operations will be applied.
 
 ## A Quick Example: Facial Occlusion
 ```
@@ -24,10 +24,18 @@ pf.occlude_face_region(input_dir = in_dir, output_dir = out_dir, landmarks_to_oc
 ```
 
 ### Before
-![Unprocessed Image](images/portrait.jpg)
+![Unprocessed Image](images/actor_05.png)
 
 ### After
-![Occluded Image](images/portrait_occluded.jpg)
+![Occluded Image](images/actor_05_occluded_bar.png)
+
+## Underlying Model
+
+MediaPipe's Face Mesh task provides automated detection of 468 unique facial landmarks. By accessing the x-y screen coordinates of these landmarks, many complex image and video operations can be performed. 
+
+[![MediaPipe FaceMesh](https://ai.google.dev/static/mediapipe/images/solutions/examples/face_landmark.png)](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker)
+
+For more on mediapipe, see [here](https://ai.google.dev/edge/mediapipe/solutions/guide)
 
 ## Documentation and Changelog
 

@@ -7,7 +7,6 @@ import os
 import sys
 from typing import Callable
 from .psyfaceutils import *
-###### this import of my own module is causing errors with sphinx
 
 def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
@@ -1010,7 +1009,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
 
 def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
                      timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False,
-                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None: 
+                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False, **kwargs) -> None: 
     """For each video file contained in input_dir, the function applies a weighted color shift to the face region, 
     outputting each resulting video to output_dir. Weights are calculated using a passed timing function, that returns
     a float in the normalised range [0,1].
@@ -1060,6 +1059,9 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
     static_image_mode: bool
         A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
         video frames.
+    
+    **kwargs: dict
+        Any additional parameters required for the timing function will be passed here. 
         
     Raises
     ------
