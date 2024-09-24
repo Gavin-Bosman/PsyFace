@@ -68,7 +68,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
 
     def process_frame(frame: cv.typing.MatLike, mask_type: int) -> cv.typing.MatLike:
         match mask_type:
-            case 3:
+            case 3: # Face skin isolation
                 face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
                 landmark_screen_coords = []
 
@@ -139,8 +139,13 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
                 thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-                floodfilled = thresholded.copy()
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
                 cv.floodFill(floodfilled, None, (0,0), 255)
+
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
                 floodfilled = cv.bitwise_not(floodfilled)
                 foreground = cv.bitwise_or(thresholded, floodfilled)
 
@@ -156,12 +161,12 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 # Last step, masking out the bounding face shape
                 masked_frame = cv.bitwise_and(masked_frame, foreground)
                 masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
-                frame = cv.bitwise_and(frame, frame, foreground)
-                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
-
+                frame = cv.bitwise_and(frame, frame, mask = foreground)
+                masked_frame = np.where(masked_frame == 255, frame, 255)
+                # masked_frame = np.where(masked_frame == 255, frame, masked_frame) for black background in output
                 return masked_frame
 
-            case 2:
+            case 2: # Face oval tight
                 face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
                 landmark_screen_coords = []
 
@@ -195,8 +200,13 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
                 thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-                floodfilled = thresholded.copy()
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
                 cv.floodFill(floodfilled, None, (0,0), 255)
+
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
                 floodfilled = cv.bitwise_not(floodfilled)
                 foreground = cv.bitwise_or(thresholded, floodfilled)
 
@@ -207,11 +217,11 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 # Last step, masking out the bounding face shape
                 masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
                 frame = cv.bitwise_and(frame, frame, foreground)
-                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
+                masked_frame = np.where(masked_frame == 255, frame, 255)
 
                 return masked_frame
             
-            case 1:
+            case 1: # Face oval
                 face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
                 landmark_screen_coords = []
 
@@ -245,8 +255,13 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
                 thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-                floodfilled = thresholded.copy()
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
                 cv.floodFill(floodfilled, None, (0,0), 255)
+
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
                 floodfilled = cv.bitwise_not(floodfilled)
                 foreground = cv.bitwise_or(thresholded, floodfilled)
 
@@ -257,7 +272,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 # Last step, masking out the bounding face shape
                 masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
                 frame = cv.bitwise_and(frame, frame, foreground)
-                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
+                masked_frame = np.where(masked_frame == 255, frame, 255)
 
                 return masked_frame
             
@@ -885,94 +900,113 @@ def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|
     capture.release()
     csv.close()
 
-def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | None, shift_weight: float, max_color_shift: float = 8.0, 
-                    max_sat_shift: float = 0.0, shift_color: str|int = COLOR_RED, sat_only: bool = False) -> cv2.typing.MatLike:
-    """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight*max_shift) 
-    units in the masked region of the image. This function makes use of the CIE Lab* perceptually uniform color space to 
-    perform natural looking color shifts on the face.
+def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, shift_magnitude: float = 8.0, timing_func:Callable[...,float] = sigmoid, 
+                     shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5) -> None: 
+    """For each image or video file contained in input_dir, the function applies a weighted color shift to the face region, 
+    outputting each resulting file in output_dir. Weights are calculated using a passed timing function, that returns
+    a float in the normalised range [0,1].
+    (NOTE there is currently no checking to ensure timing function outputs are normalised)
 
     Parameters
     ----------
 
-    img: Matlike
-        An input still image or video frame.
+    input_dir: str
+        A path string to the directory containing input video files.
 
-    img_mask: Matlike
-        A binary image with the same shape as img.
-
-    shift_weight: float
-        The current shifting weight; a float in the range [0,1] returned from a timing function. 
-
-    max_color_shift: float
-        The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.
+    output_dir: str
+        A path string to the directory where outputted video files will be saved.
     
-    max_sat_shift: float
-        The maximum units to shift the images saturation by.
+    onset_t: float
+        The onset time of the colour shifting.
     
+    offset_t: float
+        The offset time of the colour shifting.
+    
+    shift_magnitude: float
+        The maximum units to shift the colour temperature by, during peak onset.
+    
+    timingFunc: Function() -> float
+        Any function that takes at least one input float (time), and returns a float.
+
     shift_color: str, int
-        An integer or string literal specifying which color will be applied to the input image.
+        Either a string literal specifying the color of choice, or a predefined integer constant.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating whether the input directory contains nested directories.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
 
-    sat_only: bool
-        A boolean flag that indicates if only the saturation is being modified.
-            
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+        
     Raises
     ------
-
+    
     TypeError
-        On invalid input parameter types.
-    ValueError 
-        If an undefined color value is passed, or non-matching image and mask shapes are provided.
-
-    Returns
-    -------
-
-    result: Matlike
-        The input image, color-shifted in the region specified by the input mask. 
+        Given invalid parameter types.
+    OSError
+        Given invalid directory paths.
+    ValueError:
+        If provided timing_func does not return a normalised float value.
     """
 
+    global FACE_OVAL_PATH
+    global RIGHT_IRIS_PATH
+    global LEFT_IRIS_PATH
+    global LIPS_TIGHT_PATH
     global COLOR_RED
     global COLOR_BLUE
     global COLOR_GREEN
     global COLOR_YELLOW
-    
-    # Type checking input parameters
-    if not isinstance(img, cv2.typing.MatLike):
-        raise TypeError("Color_shift: parameter img must be a Matlike.")
-    if not isinstance(img_mask, cv2.typing.MatLike):
-        raise TypeError("Color_shift: parameter mask must be a Matlike.")
-    if img.shape[:2] != img_mask.shape[:2]:
-        raise ValueError("Color_shift: image and mask have different shapes.")
-    
-    if not isinstance(shift_weight, float):
-        raise TypeError("Color_shift: parameter weight must be of type float.")
-    if not isinstance(max_color_shift, float):
-        raise TypeError("Color_shift: parameter maxShift must be of type float.")
-    if not isinstance(max_sat_shift, float):
-        raise TypeError("Color_shift: parameter sat_delta must be of type float.")
-    
-    if isinstance(shift_color, str):
-        if str.lower(shift_color) not in ["red", "green", "blue", "yellow"]:
-            raise ValueError("Color_shift: color must be one of: red, green, blue, yellow.")
-    elif isinstance(shift_color, int):
-        if shift_color not in [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW]:
-            raise ValueError("Color_shift: color must be one of: red, green, blue, yellow.")
-    else:
-        raise TypeError("Color_shift: parameter color must be of type str or int.")
-    
-    result = None
+    singleFile = False
+    static_image_mode = False
 
-    if not sat_only:
+    def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | None, shift_weight: float, max_color_shift: float = 8.0, 
+                    shift_color: str|int = COLOR_RED) -> cv2.typing.MatLike:
+        """Takes in an image and a mask of the same shape, and shifts the specified color temperature by (weight * max_shift) 
+        units in the masked region of the image. This function makes use of the CIE La*b* perceptually uniform color space to 
+        perform natural looking color shifts on the face.
 
-        img_LAB = None
+        Parameters
+        ----------
 
-        if max_sat_shift != 0.0:
-            img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
-            h,s,v = cv.split(img_hsv)
-            s = np.where(img_mask == 255, s + (shift_weight * max_sat_shift), s)
-            np.clip(s,0,255)
-            img_hsv = cv.merge([h,s,v])
+        img: Matlike
+            An input still image or video frame.
 
-            img_LAB = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+        img_mask: Matlike
+            A binary image with the same shape as img.
+
+        shift_weight: float
+            The current shifting weight; a float in the range [0,1] returned from a timing function. 
+
+        max_color_shift: float
+            The maximum units to shift a* (red-green) or b* (blue-yellow) of the Lab* color space.
+        
+        shift_color: str, int
+            An integer or string literal specifying which color will be applied to the input image.
+                
+        Raises
+        ------
+
+        TypeError
+            On invalid input parameter types.
+        ValueError 
+            If an undefined color value is passed, or non-matching image and mask shapes are provided.
+
+        Returns
+        -------
+
+        result: Matlike
+            The input image, color-shifted in the region specified by the input mask. 
+        """
+
+        global COLOR_RED
+        global COLOR_BLUE
+        global COLOR_GREEN
+        global COLOR_YELLOW
 
         # Convert input image to CIE La*b* color space (perceptually uniform space)
         img_LAB = cv.cvtColor(img, cv.COLOR_BGR2LAB).astype(np.float32)
@@ -995,94 +1029,7 @@ def shift_color_temp(img: cv2.typing.MatLike, img_mask: cv2.typing.MatLike | Non
         
         # Convert CIE La*b* back to BGR
         result = cv.cvtColor(img_LAB.astype(np.uint8), cv.COLOR_LAB2BGR)
-        
-    elif max_sat_shift != 0.0:
-        img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype(np.float32)
-        h,s,v = cv.split(img_hsv)
-        s = np.where(img_mask == 255, s + (shift_weight * max_sat_shift), s)
-        np.clip(s,0,255)
-        img_hsv = cv.merge([h,s,v])
-
-        result = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
-
-    return result
-
-def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, max_color_shift: float = 8.0, max_sat_shift: float = 0.0,
-                     timing_func:Callable[...,float] = sigmoid, shift_color:str|int = COLOR_RED, with_sub_dirs:bool = False, sat_only:bool = False,
-                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False, **kwargs) -> None: 
-    """For each video file contained in input_dir, the function applies a weighted color shift to the face region, 
-    outputting each resulting video to output_dir. Weights are calculated using a passed timing function, that returns
-    a float in the normalised range [0,1].
-    (NOTE there is currently no checking to ensure timing function outputs are normalised)
-
-    Parameters
-    ----------
-
-    input_dir: str
-        A path string to the directory containing input video files.
-
-    output_dir: str
-        A path string to the directory where outputted video files will be saved.
-    
-    onset_t: float
-        The onset time of the colour shifting.
-    
-    offset_t: float
-        The offset time of the colour shifting.
-    
-    max_color_shift: float
-        The maximum units to shift the colour temperature by, during peak onset.
-    
-    max_sat_shift: float
-        The maximum units to shift the images saturation by, during peak onset.
-    
-    timingFunc: Function() -> float
-        Any function that takes at least one input float (time), and returns a float.
-
-    shift_color: str, int
-        Either a string literal specifying the color of choice, or a predefined integer constant.
-    
-    with_sub_dirs: bool
-        A boolean flag indicating whether the input directory contains nested directories.
-    
-    sat_only: bool
-        A boolean flag indicating if only the saturation of the input file will be shifted.
-    
-    min_detection_confidence: float
-        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-        FaceMesh constructor.
-
-    min_tracking_confidence: float
-        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
-        FaceMesh constructor.
-    
-    static_image_mode: bool
-        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
-        video frames.
-    
-    **kwargs: dict
-        Any additional parameters required for the timing function will be passed here. 
-        
-    Raises
-    ------
-    
-    TypeError
-        Given invalid parameter types.
-    OSError
-        Given invalid directory paths.
-    ValueError:
-        If provided timing_func does not return a normalised float value.
-    """
-
-    global FACE_OVAL_PATH
-    global RIGHT_IRIS_PATH
-    global LEFT_IRIS_PATH
-    global LIPS_TIGHT_PATH
-    global COLOR_RED
-    global COLOR_BLUE
-    global COLOR_GREEN
-    global COLOR_YELLOW
-    singleFile = False
+        return result
     
     # Performing checks on function parameters
     if not isinstance(input_dir, str):
@@ -1103,10 +1050,8 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
         raise TypeError("Face_color_shift: parameter onset_t must be a float.")
     if not isinstance(offset_t, float):
         raise TypeError("Face_color_shift: parameter offset_t must be a float.")
-    if not isinstance(max_color_shift, float):
+    if not isinstance(shift_magnitude, float):
         raise TypeError("Face_color_shift: parameter max_color_shift must be a float.")
-    if not isinstance(max_sat_shift, float):
-        raise TypeError("Face_color_shift: parameter sat_delta must be a float.")
     
     if isinstance(timing_func, Callable):
         if not isinstance(timing_func(1.0), float):
@@ -1125,9 +1070,6 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
     if not isinstance(with_sub_dirs, bool):
         raise TypeError("Face_color_shift: parameter with_sub_dirs must be of type bool.")
     
-    if not isinstance(sat_only, bool):
-        raise TypeError("Face_color_shift: parameter sat_only must be of type bool.")
-    
     if not isinstance(min_detection_confidence, float):
         raise TypeError("Face_color_shift: parameter min_detection_confidence must be of type float.")
     elif min_detection_confidence < 0 or min_detection_confidence > 1:
@@ -1137,12 +1079,6 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
         raise TypeError("Face_color_shift: parameter min_tracking_confidence must be of type float.")
     elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
         raise ValueError("Face_color_shift: parameter min_tracking_confidence must be in the range [0,1].")
-    
-    if not isinstance(static_image_mode, bool):
-        raise TypeError("Face_color_shift: parameter static_image_mode must be of type bool.")
-    
-    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, 
-                                                min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
 
     # Creating a list of file path strings to iterate through when processing
     files_to_process = []
@@ -1298,8 +1234,13 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
             grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
             thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-            floodfilled = thresholded.copy()
+            # Adding a temporary image border to allow for correct floodfill behaviour
+            bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+            floodfilled = bordered_thresholded.copy()
             cv.floodFill(floodfilled, None, (0,0), 255)
+
+            # Removing temporary border and creating foreground mask
+            floodfilled = floodfilled[10:-10, 10:-10]
             floodfilled = cv.bitwise_not(floodfilled)
             foreground = cv.bitwise_or(thresholded, floodfilled)
             
@@ -1307,54 +1248,667 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
                 # Getting the current video timestamp
                 dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
 
-                if sat_only:
-                    if dt < onset_t:
-                        result.write(frame)
-                    elif dt < offset_t:
-                        weight = timing_func(dt)
-                        frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
-                        frame_coloured[foreground == 0] = frame[foreground == 0]
-                        result.write(frame_coloured)
-                    else:
-                        dt = cap_duration - dt
-                        weight = timing_func(dt)
-                        frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, max_sat_shift=max_sat_shift, sat_only=True)
-                        frame_coloured[foreground == 0] = frame[foreground == 0] 
-                        result.write(frame_coloured)
+                if dt < onset_t:
+                    result.write(frame)
+                elif dt < offset_t:
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=shift_magnitude)
+                    frame_coloured[foreground == 0] = frame[foreground == 0]
+                    result.write(frame_coloured)
                 else:
-                    if dt < onset_t:
-                        result.write(frame)
-                    elif dt < offset_t:
-                        weight = timing_func(dt)
-                        frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
-                        frame_coloured[foreground == 0] = frame[foreground == 0]
-                        result.write(frame_coloured)
-                    else:
-                        dt = cap_duration - dt
-                        weight = timing_func(dt)
-                        frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
-                        frame_coloured[foreground == 0] = frame[foreground == 0]
-                        result.write(frame_coloured)
+                    dt = cap_duration - dt
+                    weight = timing_func(dt)
+                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=weight, shift_color=shift_color, max_color_shift=shift_magnitude)
+                    frame_coloured[foreground == 0] = frame[foreground == 0]
+                    result.write(frame_coloured)
             
             else:
-                if sat_only:
-                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=1.0, max_sat_shift=max_sat_shift, sat_only=True)
-                    frame_coloured[foreground == 0] = frame[foreground == 0]
-                    success = cv.imwrite(output_dir + "\\" + filename + "_color_shifted" + extension, frame_coloured)
+                frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=1.0, shift_color=shift_color, max_color_shift=shift_magnitude)
+                frame_coloured[foreground == 0] = frame[foreground == 0]
+                success = cv.imwrite(output_dir + "\\" + filename + "_color_shifted" + extension, frame_coloured)
 
-                    if not success:
-                        print("Face_color_shift: cv2.imwrite error.")
-                        sys.exit(1)
-                else:
-                    frame_coloured = shift_color_temp(img=frame, img_mask=masked_frame, shift_weight=1.0, shift_color=shift_color, max_color_shift=max_color_shift, max_sat_shift=max_sat_shift)
-                    frame_coloured[foreground == 0] = frame[foreground == 0]
-                    success = cv.imwrite(output_dir + "\\" + filename + "_color_shifted" + extension, frame_coloured)
-
-                    if not success:
-                        print("Face_color_shift: cv2.imwrite error.")
-                        sys.exit(1)
+                if not success:
+                    print("Face_color_shift: cv2.imwrite error.")
+                    sys.exit(1)
                 break
 
+        if not static_image_mode:
+            capture.release()
+            result.release()
+
+def face_saturation_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, shift_magnitude:float = -8.0, 
+                          timing_func:Callable[..., float] = sigmoid, with_sub_dirs:bool = False, min_detection_confidence:float = 0.5,
+                           min_tracking_confidence:float = 0.5) -> None:
+    """For each image or video file contained in input_dir, the function applies a weighted saturation shift to the face region, 
+    outputting each processed file to output_dir. Weights are calculated using a passed timing function, that returns
+    a float in the normalised range [0,1].
+    (NOTE there is currently no checking to ensure timing function outputs are normalised)
+
+    Parameters
+    ----------
+
+    input_dir: str
+        A path string to the directory containing input video files.
+
+    output_dir: str
+        A path string to the directory where outputted video files will be saved.
+    
+    onset_t: float
+        The onset time of the colour shifting.
+    
+    offset_t: float
+        The offset time of the colour shifting.
+    
+    shift_magnitude: float
+        The maximum units to shift the saturation by, during peak onset.
+    
+    timingFunc: Function() -> float
+        Any function that takes at least one input float (time), and returns a float.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating whether the input directory contains nested directories.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+        
+    Raises
+    ------
+    
+    TypeError
+        Given invalid parameter types.
+    OSError
+        Given invalid directory paths.
+    ValueError:
+        If provided timing_func does not return a normalised float value.
+    """
+
+    global FACE_OVAL_PATH
+    global RIGHT_IRIS_PATH
+    global LEFT_IRIS_PATH
+    global LIPS_TIGHT_PATH
+    singleFile = False
+    static_image_mode = False
+    
+    # Performing checks on function parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("Face_saturation_shift: invalid type for parameter input_dir.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Face_saturation_shift: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("Face_saturation_shift: parameter output_dir must be a str.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Face_saturation_shift: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(output_dir):
+        raise ValueError("Face_saturation_shift: output_dir must be a valid path to a directory.")
+    
+    if not isinstance(onset_t, float):
+        raise TypeError("Face_saturation_shift: parameter onset_t must be a float.")
+    if not isinstance(offset_t, float):
+        raise TypeError("Face_saturation_shift: parameter offset_t must be a float.")
+    if not isinstance(shift_magnitude, float):
+        raise TypeError("Face_saturation_shift: parameter max_color_shift must be a float.")
+    
+    if isinstance(timing_func, Callable):
+        if not isinstance(timing_func(1.0), float):
+            raise ValueError("Face_saturation_shift: timing_func must return a float value.")
+    # add check for return value in range [0,1]
+
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Face_saturation_shift: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Face_saturation_shift: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Face_saturation_shift: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Face_saturation_shift: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Face_saturation_shift: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    # Creating a list of file path strings to iterate through when processing
+    files_to_process = []
+
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+        files_to_process = [input_dir + "\\" + file for file in os.listdir(input_dir)]
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    # Creating named output directories for video output
+    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
+        os.mkdir(output_dir + "\\Color_Shifted_Videos")
+    output_dir = output_dir + "\\Color_Shifted_Videos"
+    
+    for file in files_to_process:
+            
+        # Filetype is used to determine the functions running mode
+        filename, extension = os.path.splitext(os.path.basename(file))
+        codec = None
+        capture = None
+        result = None
+        cap_duration = None
+
+        # Using the file extension to sniff video codec or image container for images
+        match extension:
+            case ".mp4":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".mov":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".jpg" | ".jpeg" | ".png" | ".bmp":
+                static_image_mode = True
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case _:
+                print("Face_saturation_shift: Incompatible video or image file type. Please see psyfaceutils.transcode_video_to_mp4().")
+                sys.exit(1)
+        
+        if not static_image_mode:
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened():
+                print("Face_saturation_shift: Error opening video file.")
+                sys.exit(1)
+            
+            size = (int(capture.get(3)), int(capture.get(4)))
+
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_sat_shifted" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Face_saturation_shift: Error opening VideoWriter object.")
+                sys.exit(1)
+            
+            # Getting the video duration for weight calculations
+            frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
+            fps = capture.get(cv.CAP_PROP_FPS)
+            cap_duration = float(frame_count)/float(fps)
+
+            if offset_t == 0.0:
+                offset_t = cap_duration // 1
+            
+        while True:
+            frame = None
+            if static_image_mode:
+                frame = cv.imread(file)
+            else:
+                success, frame = capture.read()
+                if not success:
+                    break    
+
+            face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+            landmark_screen_coords = []
+
+            if face_mesh_results.multi_face_landmarks:
+                for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                    # Convert normalised landmark coordinates to x-y pixel coordinates
+                    for id,lm in enumerate(face_landmarks.landmark):
+                        ih, iw, ic = frame.shape
+                        x,y = int(lm.x * iw), int(lm.y * ih)
+                        landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+            else:
+                continue
+            
+            # Getting screen coordinates of facial landmarks
+            le_screen_coords = []
+            re_screen_coords = []
+            lips_screen_coords = []
+            face_outline_coords = []
+
+            # Left eye screen coordinates
+            for cur_source, cur_target in LEFT_IRIS_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                le_screen_coords.append((source.get('x'),source.get('y')))
+                le_screen_coords.append((target.get('x'),target.get('y')))
+            
+            # Right eye screen coordinates
+            for cur_source, cur_target in RIGHT_IRIS_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                re_screen_coords.append((source.get('x'),source.get('y')))
+                re_screen_coords.append((target.get('x'),target.get('y')))
+
+            # Lips screen coordinates
+            for cur_source, cur_target in LIPS_TIGHT_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                lips_screen_coords.append((source.get('x'),source.get('y')))
+                lips_screen_coords.append((target.get('x'),target.get('y')))
+            
+            # Face oval screen coordinates
+            for cur_source, cur_target in FACE_OVAL_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                face_outline_coords.append((source.get('x'),source.get('y')))
+                face_outline_coords.append((target.get('x'),target.get('y')))
+
+            # Creating boolean masks for the facial landmarks 
+            le_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+            le_mask = le_mask.astype(bool)
+
+            re_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+            re_mask = re_mask.astype(bool)
+
+            lip_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+            lip_mask = lip_mask.astype(bool)
+
+            oval_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+            oval_mask = oval_mask.astype(bool)
+
+            # Masking the face oval
+            masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            masked_frame[oval_mask] = 255
+            masked_frame[le_mask] = 0
+            masked_frame[re_mask] = 0
+            masked_frame[lip_mask] = 0
+            
+            # Otsu thresholding to seperate foreground and background
+            grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+            thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+            # Adding a temporary image border to allow for correct floodfill behaviour
+            bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+            floodfilled = bordered_thresholded.copy()
+            cv.floodFill(floodfilled, None, (0,0), 255)
+
+            # Removing temporary border and creating foreground mask
+            floodfilled = floodfilled[10:-10, 10:-10]
+            floodfilled = cv.bitwise_not(floodfilled)
+            foreground = cv.bitwise_or(thresholded, floodfilled)
+            
+            if not static_image_mode:
+                # Getting the current video timestamp
+                dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+
+                if dt < onset_t:
+                    result.write(frame)
+                elif dt < offset_t:
+                    shift_weight = timing_func(dt)
+                    img_hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV).astype(np.float32)
+
+                    h,s,v = cv.split(img_hsv)
+                    s = np.where(masked_frame == 255, s + (shift_weight * shift_magnitude), s)
+                    np.clip(s,0,255)
+                    img_hsv = cv.merge([h,s,v])
+
+                    img_bgr = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+                    img_bgr[foreground == 0] = frame[foreground == 0]
+                    result.write(img_bgr)
+                else:
+                    dt = cap_duration - dt
+                    shift_weight = timing_func(dt)
+                    img_hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV).astype(np.float32)
+
+                    h,s,v = cv.split(img_hsv)
+                    s = np.where(masked_frame == 255, s + (shift_weight * shift_magnitude), s)
+                    np.clip(s,0,255)
+                    img_hsv = cv.merge([h,s,v])
+
+                    img_bgr = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+                    img_bgr[foreground == 0] = frame[foreground == 0]
+                    result.write(img_bgr)
+
+            else:
+                img_hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV).astype(np.float32)
+
+                h,s,v = cv.split(img_hsv)
+                s = np.where(masked_frame == 255, s + (1.0 * shift_magnitude), s)
+                np.clip(s,0,255)
+                img_hsv = cv.merge([h,s,v])
+
+                img_bgr = cv.cvtColor(img_hsv.astype(np.uint8), cv.COLOR_HSV2BGR)
+                img_bgr[foreground == 0] = frame[foreground == 0]
+                success = cv.imwrite(output_dir + "\\" + filename + "_sat_shifted" + extension, img_bgr)
+
+                if not success:
+                    print("Face_saturation_shift: cv2.imwrite error.")
+                    sys.exit(1)
+
+                break
+
+        if not static_image_mode:
+            capture.release()
+            result.release()
+
+def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, shift_magnitude:float = 10.0, 
+                        timing_func:Callable[..., float] = sigmoid, with_sub_dirs:bool = False, min_detection_confidence:float = 0.5,
+                        min_tracking_confidence:float = 0.5) -> None:
+    """For each image or video file contained in input_dir, the function applies a weighted lightness shift to the face region, 
+    outputting each processed file to output_dir. Lightness is defined as the cube root of the relative luminance, and it is used in the 
+    CIE La*b* colour space. Weights are calculated using a passed timing function, that returns a float in the normalised range [0,1].
+    (NOTE there is currently no checking to ensure timing function outputs are normalised)
+
+    Parameters
+    ----------
+
+    input_dir: str
+        A path string to the directory containing input video files.
+
+    output_dir: str
+        A path string to the directory where outputted video files will be saved.
+    
+    onset_t: float
+        The onset time of the colour shifting.
+    
+    offset_t: float
+        The offset time of the colour shifting.
+    
+    shift_magnitude: float
+        The maximum units to shift the luminance by, during peak onset.
+    
+    timingFunc: Function() -> float
+        Any function that takes at least one input float (time), and returns a float.
+    
+    with_sub_dirs: bool
+        A boolean flag indicating whether the input directory contains nested directories.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+        
+    Raises
+    ------
+    
+    TypeError
+        Given invalid parameter types.
+    OSError
+        Given invalid directory paths.
+    ValueError:
+        If provided timing_func does not return a normalised float value.
+    """
+
+    global FACE_OVAL_PATH
+    global RIGHT_IRIS_PATH
+    global LEFT_IRIS_PATH
+    global LIPS_TIGHT_PATH
+    singleFile = False
+    static_image_mode = False
+    
+    # Performing checks on function parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("Face_lightness_shift: invalid type for parameter input_dir.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Face_lightness_shift: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("Face_lightness_shift: parameter output_dir must be a str.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Face_lightness_shift: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(output_dir):
+        raise ValueError("Face_lightness_shift: output_dir must be a valid path to a directory.")
+    
+    if not isinstance(onset_t, float):
+        raise TypeError("Face_lightness_shift: parameter onset_t must be a float.")
+    if not isinstance(offset_t, float):
+        raise TypeError("Face_lightness_shift: parameter offset_t must be a float.")
+    if not isinstance(shift_magnitude, float):
+        raise TypeError("Face_lightness_shift: parameter max_color_shift must be a float.")
+    
+    if isinstance(timing_func, Callable):
+        if not isinstance(timing_func(1.0), float):
+            raise ValueError("Face_lightness_shift: timing_func must return a float value.")
+    # add check for return value in range [0,1]
+
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Face_lightness_shift: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Face_lightness_shift: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Face_lightness_shift: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Face_lightness_shift: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Face_lightness_shift: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    # Creating a list of file path strings to iterate through when processing
+    files_to_process = []
+
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+        files_to_process = [input_dir + "\\" + file for file in os.listdir(input_dir)]
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    # Creating named output directories for video output
+    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
+        os.mkdir(output_dir + "\\Color_Shifted_Videos")
+    output_dir = output_dir + "\\Color_Shifted_Videos"
+    
+    for file in files_to_process:
+            
+        # Filetype is used to determine the functions running mode
+        filename, extension = os.path.splitext(os.path.basename(file))
+        codec = None
+        capture = None
+        result = None
+        cap_duration = None
+
+        # Using the file extension to sniff video codec or image container for images
+        match extension:
+            case ".mp4":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".mov":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".jpg" | ".jpeg" | ".png" | ".bmp":
+                static_image_mode = True
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case _:
+                print("Face_lightness_shift: Incompatible video or image file type. Please see psyfaceutils.transcode_video_to_mp4().")
+                sys.exit(1)
+        
+        if not static_image_mode:
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened():
+                print("Face_lightness_shift: Error opening video file.")
+                sys.exit(1)
+            
+            size = (int(capture.get(3)), int(capture.get(4)))
+
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_light_shifted" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Face_lightness_shift: Error opening VideoWriter object.")
+                sys.exit(1)
+            
+            # Getting the video duration for weight calculations
+            frame_count = capture.get(cv.CAP_PROP_FRAME_COUNT)
+            fps = capture.get(cv.CAP_PROP_FPS)
+            cap_duration = float(frame_count)/float(fps)
+
+            if offset_t == 0.0:
+                offset_t = cap_duration // 1
+            
+        while True:
+            frame = None
+            if static_image_mode:
+                frame = cv.imread(file)
+            else:
+                success, frame = capture.read()
+                if not success:
+                    break    
+
+            face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+            landmark_screen_coords = []
+
+            if face_mesh_results.multi_face_landmarks:
+                for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                    # Convert normalised landmark coordinates to x-y pixel coordinates
+                    for id,lm in enumerate(face_landmarks.landmark):
+                        ih, iw, ic = frame.shape
+                        x,y = int(lm.x * iw), int(lm.y * ih)
+                        landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+            else:
+                continue
+            
+            # Getting screen coordinates of facial landmarks
+            le_screen_coords = []
+            re_screen_coords = []
+            lips_screen_coords = []
+            face_outline_coords = []
+
+            # Left eye screen coordinates
+            for cur_source, cur_target in LEFT_IRIS_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                le_screen_coords.append((source.get('x'),source.get('y')))
+                le_screen_coords.append((target.get('x'),target.get('y')))
+            
+            # Right eye screen coordinates
+            for cur_source, cur_target in RIGHT_IRIS_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                re_screen_coords.append((source.get('x'),source.get('y')))
+                re_screen_coords.append((target.get('x'),target.get('y')))
+
+            # Lips screen coordinates
+            for cur_source, cur_target in LIPS_TIGHT_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                lips_screen_coords.append((source.get('x'),source.get('y')))
+                lips_screen_coords.append((target.get('x'),target.get('y')))
+            
+            # Face oval screen coordinates
+            for cur_source, cur_target in FACE_OVAL_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                face_outline_coords.append((source.get('x'),source.get('y')))
+                face_outline_coords.append((target.get('x'),target.get('y')))
+
+            # Creating boolean masks for the facial landmarks 
+            le_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+            le_mask = le_mask.astype(bool)
+
+            re_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+            re_mask = re_mask.astype(bool)
+
+            lip_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+            lip_mask = lip_mask.astype(bool)
+
+            oval_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+            oval_mask = oval_mask.astype(bool)
+
+            # Masking the face oval
+            masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            masked_frame[oval_mask] = 255
+            masked_frame[le_mask] = 0
+            masked_frame[re_mask] = 0
+            masked_frame[lip_mask] = 0
+            
+            # Otsu thresholding to seperate foreground and background
+            grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+            thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+            # Adding a temporary image border to allow for correct floodfill behaviour
+            bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+            floodfilled = bordered_thresholded.copy()
+            cv.floodFill(floodfilled, None, (0,0), 255)
+
+            # Removing temporary border and creating foreground mask
+            floodfilled = floodfilled[10:-10, 10:-10]
+            floodfilled = cv.bitwise_not(floodfilled)
+            foreground = cv.bitwise_or(thresholded, floodfilled)
+
+            #TODO investigate white artifacts when negative lightness shifting
+            # it may have something to do with when lightness is set below 0
+
+            if not static_image_mode:
+                # Getting the current video timestamp
+                dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
+
+                if dt < onset_t:
+                    result.write(frame)
+                elif dt < offset_t:
+                    weight = timing_func(dt)
+
+                    img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
+                    l,a,b = cv.split(img_lab)
+
+                    l = np.where(masked_frame == 255, l + (weight * shift_magnitude), l)
+                    np.clip(l, 0, 100)
+                    img_lab = cv.merge([l,a,b])
+
+                    img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
+                    img_bgr[foreground == 0] = frame[foreground == 0]
+                    result.write(img_bgr)
+                else:
+                    dt = cap_duration - dt
+                    weight = timing_func(dt)
+
+                    img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
+                    l,a,b = cv.split(img_lab)
+
+                    l = np.where(masked_frame == 255, l + (weight * shift_magnitude), l)
+                    np.clip(l, 0, 100)
+                    img_lab = cv.merge([l,a,b])
+
+                    img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
+                    img_bgr[foreground == 0] = frame[foreground == 0]
+                    result.write(img_bgr)
+
+            else:
+                img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
+                l,a,b = cv.split(img_lab)
+
+                l = np.where(masked_frame == 255, l + shift_magnitude, l)
+                np.clip(l, 0, 100)
+                img_lab = cv.merge([l,a,b])
+
+                img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
+                img_bgr[foreground == 0] = frame[foreground == 0]
+                success = cv.imwrite(output_dir + "\\" + filename + "_light_shifted" + extension, img_bgr)
+
+                if not success:
+                    print("Face_lightness_shift: cv2.imwrite error.")
+                    sys.exit(1)
+
+                break
+        
         if not static_image_mode:
             capture.release()
             result.release()

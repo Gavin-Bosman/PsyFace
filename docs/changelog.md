@@ -3,8 +3,28 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- v0.5 unit testing
+- v0.5... unit testing
 - v1.0 gui preview prior to file processing
+
+## [0.5.0] - 2024-09-24
+
+### Added
+
+- Package documentation is now built with MKDocs
+- Face_saturation_shift and Face_luminance_shift are now standalone functions, where previously saturation and luma parameters were
+passed to the Face_color_shift function. 
+- Github.io hosting for documentation page, as well as refactored github landing page and readme.md.
+- License.txt added to root project structure.
+
+### Changed
+
+- `Shift_color_temp` was refactored to be a nested function within `Face_color_shift`, saturation and luminance shifting were relocated to their own specific functions. 
+- Floodfilling operation involved with foreground-background seperation had some buggy behaviour if there was any discontinuity in the background. An intermediate step was added where prior to floodfilling, the thresholded image is padded with a 10 pixel border, which is removed after the floodfill. This border ensures background continuity when performing the floodfill operation.
+- Parameters `max_color_shift` and `max_sat_shift` are now renamed to `shift_magnitude`.
+
+### Removed
+
+- Sphinx and readthedocs project files and dependencies
 
 ## [0.4.2] - 2024-08-24
 
