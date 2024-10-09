@@ -5,6 +5,9 @@ source/__pycache__/
 Color_Shifted_Videos/
 Masked_Video_Output/
 Occluded_Video_Output/
+Blurred_Video_Output/
+Brightness_Shifted/
+Sat_Shifted/
 Color_Channel_Means/
 Makefile
 make.bat

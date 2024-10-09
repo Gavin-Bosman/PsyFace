@@ -9,7 +9,8 @@ LEFT_EYE_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448,
 LEFT_IRIS_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
 RIGHT_EYE_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
 RIGHT_IRIS_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
-NOSE_IDX = [168, 193, 122, 196, 3, 198, 49, 203, 167, 164, 393, 423, 279, 420, 248, 419, 351, 417, 168]
+NOSE_IDX = [168, 193, 122, 196, 174, 217, 209, 49, 129, 64, 235, 75, 60, 125, 19, 462, 290, 305, 439, 
+            278, 279, 429, 437, 399, 419, 351, 417, 168]
 LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
 LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
 FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
@@ -48,10 +49,52 @@ def create_path(landmark_set:list[int]) -> list[tuple]:
         p1 = obj['p1'].values[0]
         p2 = obj['p2'].values[0]
 
-        current_route = [p1, p2]
+        current_route = (p1, p2)
         routes.append(current_route)
     
     return routes
+
+def compute_line_intersection(p1:tuple, p2:tuple, line:int, vertical:bool=False) -> tuple | None:
+    """ compute_line_intersection takes two (x,y) points, and a line. If the path of the two provided points intersects the 
+    provided line, an intersection point (x,y) is calculated and returned.
+
+    Parameters:
+    -----------
+
+    p1: tuple of int
+        The first (x,y) point to be compared.
+    
+    p2: tuple of int
+        The second (x,y) point to be compared.
+    
+    line: int
+        An integer representing a line in the x-y coordinate space.
+    
+    vertical: bool
+        A boolean flag indicating whether or not the comparison line is vertical.
+
+    Returns:
+    --------
+
+    A point (x,y) intersecting the provided line, or None if no such point exists.
+    """
+    x1, y1 = p1
+    x2, y2 = p2
+
+    if vertical:
+        if (x1 < line and x2 >= line) or (x1 >= line and x2 < line):
+            # Calculate intersection point
+            t = (line - x1) / (x2 - x1)
+            intersect_y = y1 + t * (y2-y1)
+            return (line, round(intersect_y))
+    else:
+        if (y1 < line and y2 >= line) or  (y1 >= line and y2 < line):
+            # Calculate intersection point
+            t = (line - y1) / (y2 - y1)
+            intersect_x = x1 + t * (x2-x1)
+            return (round(intersect_x), line)
+    
+    return None
 
 # Preconstructed face region paths for use with facial manipulation functions
 LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
@@ -63,12 +106,17 @@ LIPS_PATH = create_path(LIPS_IDX)
 LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
 FACE_OVAL_TIGHT_PATH = create_path(FACE_OVAL_TIGHT_IDX)
+HEMI_FACE_TOP = [(0,)]
+HEMI_FACE_BOTTOM = [(1,)]
+HEMI_FACE_LEFT = [(2,)]
+HEMI_FACE_RIGHT = [(3,)]
 
 # Masking options for mask_face_region
-FACE_OVAL = 1
-FACE_OVAL_TIGHT = 2
-FACE_SKIN_ISOLATION = 3
-MASK_OPTIONS = [FACE_OVAL, FACE_OVAL_TIGHT, FACE_SKIN_ISOLATION]
+FACE_OVAL_MASK = 1
+FACE_OVAL_TIGHT_MASK = 2
+FACE_SKIN_MASK = 3
+EYES_NOSE_MOUTH_MASK = 14
+MASK_OPTIONS = [FACE_OVAL_MASK, FACE_OVAL_TIGHT_MASK, FACE_SKIN_MASK, EYES_NOSE_MOUTH_MASK]
 
 # Compatible color spaces for extract_color_channel_means and face_color_shift
 COLOR_SPACE_RGB = cv.COLOR_BGR2RGB
@@ -85,6 +133,11 @@ COLOR_YELLOW = 7
 OCCLUSION_FILL_BLACK = 8
 OCCLUSION_FILL_MEAN = 9
 OCCLUSION_FILL_BAR = 10
+
+# Blurring methods
+BLUR_METHOD_AVERAGE = 11
+BLUR_METHOD_GAUSSIAN = 12
+BLUR_METHOD_MEDIAN = 13
 
 def get_min_max_bgr(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     """Given an input video file path, returns the minimum and maximum (B,G,R) colors, containing the minimum and maximum

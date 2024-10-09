@@ -3,18 +3,21 @@ from psyface.psyfaceutils import *
 import cv2 as cv
 import matplotlib.pyplot as plt
 
+#TODO add more timing functions, constricted to normalised output
+#TODO add expanded masking options to face brightness/saturation shifting
 
-#in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\Video_Song_Actors_01-24\\Video_Song_Actor_01\\Actor_01\\01-02-01-01-01-02-01.mp4"
-in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images\\Actor_08.png"
+in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\Video_Song_Actors_01-24\\Video_Song_Actor_01\\Actor_01\\01-02-01-01-01-02-01.mp4"
+#in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images\\Actor_01.png"
 out_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images"
 
 #TODO potentially reprocess colour data with cv.COLOR_BGR2HSV_FULL for full range of hue values
-#pf.mask_face_region(input_dir=in_dir, output_dir=out_dir, mask_type=FACE_SKIN_ISOLATION)
-#pf.face_color_shift(input_dir=in_dir, output_dir=out_dir, shift_color="red", max_color_shift=10.0, max_sat_shift=-5.0, static_image_mode=True)
-#pf.occlude_face_region(in_dir, out_dir, [LEFT_EYE_PATH], OCCLUSION_FILL_BAR)
+pf.mask_face_region(input_dir=in_dir, output_dir=out_dir, mask_type=EYES_NOSE_MOUTH_MASK)
+#pf.face_color_shift(input_dir=in_dir, output_dir=out_dir, shift_color="blue", shift_magnitude=6.0)
+#pf.occlude_face_region(in_dir, out_dir, [HEMI_FACE_RIGHT], OCCLUSION_FILL_BLACK)
 #pf.extract_color_channel_means(in_dir, out_dir)
-pf.face_lightness_shift(input_dir=in_dir, output_dir=out_dir, offset_t=3.0, shift_magnitude=-30.0)
-#pf.face_saturation_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=12.0)
+#pf.face_brightness_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=20, offset_t=3.0)
+#pf.face_saturation_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=-10.0)
+#pf.blur_face_region(input_dir=in_dir, output_dir=out_dir, blur_method="Gaussian", k_size=41)
 
 # Creating pyplot style grid of outputs
 
@@ -30,7 +33,7 @@ im3 = cv.copyMakeBorder(im3, top=5, bottom=5, left=5, right=5, borderType=cv.BOR
 
 im4 = cv.cvtColor(cv.imread("images\\Actor_01_occluded_bar.png"), cv.COLOR_BGR2RGB)
 im4 = cv.copyMakeBorder(im4, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
-im5 = cv.cvtColor(cv.imread("images\\Actor_01_occluded_mouth.png"), cv.COLOR_BGR2RGB)
+im5 = cv.cvtColor(cv.imread("images\\Actor_01_blurred_average.png"), cv.COLOR_BGR2RGB)
 im5 = cv.copyMakeBorder(im5, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
 im6 = cv.cvtColor(cv.imread("images\\Actor_01_occluded_mean.png"), cv.COLOR_BGR2RGB)
 im6 = cv.copyMakeBorder(im6, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
@@ -65,12 +68,12 @@ plt.title('Landmark Occlusion (pre-defined)', fontsize=10)
 fig.add_subplot(3,3,5)
 plt.imshow(im5)
 plt.axis('off')
-plt.title('Landmark Occlusion (dynamic geometry)', fontsize=10)
+plt.title('Facial Average Blur', fontsize=10)
 
 fig.add_subplot(3,3,6)
 plt.imshow(im6)
 plt.axis('off')
-plt.title('Landmark Occlusion (+ mean fill)', fontsize=10)
+plt.title('Full Facial Occlusion (mean fill)', fontsize=10)
 
 fig.add_subplot(3,3,7)
 plt.imshow(im7)

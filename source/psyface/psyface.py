@@ -7,8 +7,9 @@ import os
 import sys
 from typing import Callable
 from .psyfaceutils import *
+from operator import itemgetter
 
-def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_ISOLATION, with_sub_dirs:bool = False,
+def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MASK, with_sub_dirs:bool = False,
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
     """Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.
 
@@ -22,8 +23,8 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
         A path string of the directory where processed videos will be written to.
 
     mask_type: int
-        An integer indicating the type of mask to apply to the input videos. This can be one of two options:
-        either 1 for FACE_OVAL, or 2 for FACE_SKIN_ISOLATION.
+        An integer indicating the type of mask to apply to the input videos. This can be one of four options:
+        FACE_OVAL_MASK, FACE_OVAL_TIGHT_MASK, FACE_SKIN_MASK or EYES_NOSE_MOUTH_MASK.
 
     with_sub_dirs: bool
         Indicates if the input directory contains subfolders.
@@ -52,22 +53,96 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
     """
 
     global MASK_OPTIONS
-    global FACE_OVAL
-    global FACE_OVAL_TIGHT
-    global FACE_SKIN_ISOLATION
+    global FACE_OVAL_MASK
+    global FACE_OVAL_TIGHT_MASK
+    global FACE_SKIN_MASK
+    global EYES_NOSE_MOUTH_MASK
+
     global LEFT_EYE_PATH
     global RIGHT_EYE_PATH
     global LIPS_PATH
+    global NOSE_PATH
     global FACE_OVAL_PATH
     global FACE_OVAL_TIGHT_PATH
-    global COLOR_SPACE_RGB
-    global COLOR_SPACE_HSV
-    global COLOR_SPACE_GRAYSCALE
-    global COLOR_SPACES
     singleFile = False
 
     def process_frame(frame: cv.typing.MatLike, mask_type: int) -> cv.typing.MatLike:
         match mask_type:
+            case 14: # Eyes nose mouth mask
+                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+                landmark_screen_coords = []
+
+                if face_mesh_results.multi_face_landmarks:
+                    for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                        # Convert normalised landmark coordinates to x-y pixel coordinates
+                        for id,lm in enumerate(face_landmarks.landmark):
+                            ih, iw, ic = frame.shape
+                            x,y = int(lm.x * iw), int(lm.y * ih)
+                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+                else:
+                    print("Mask_face_region: Face mesh detection error.")
+                    sys.exit(1)
+
+                le_screen_coords = []
+                re_screen_coords = []
+                nose_screen_coords = []
+                lips_screen_coords = []
+
+                 # left eye screen coordinates
+                for cur_source, cur_target in LEFT_EYE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    le_screen_coords.append((source.get('x'),source.get('y')))
+                    le_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # right eye screen coordinates
+                for cur_source, cur_target in RIGHT_EYE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    re_screen_coords.append((source.get('x'),source.get('y')))
+                    re_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # nose screen coordinates
+                for cur_source, cur_target in NOSE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    nose_screen_coords.append((source.get('x'),source.get('y')))
+                    nose_screen_coords.append((target.get('x'),target.get('y')))
+
+                # lips screen coordinates
+                for cur_source, cur_target in LIPS_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    lips_screen_coords.append((source.get('x'),source.get('y')))
+                    lips_screen_coords.append((target.get('x'),target.get('y')))
+
+                # Creating boolean masks for the facial regions
+                le_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+                le_mask = le_mask.astype(bool)
+
+                re_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+                re_mask = re_mask.astype(bool)
+
+                nose_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                nose_mask = cv.fillConvexPoly(nose_mask, np.array(nose_screen_coords), 1)
+                nose_mask = nose_mask.astype(bool)
+
+                lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+                lip_mask = lip_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
+                masked_frame[le_mask] = 255
+                masked_frame[re_mask] = 255
+                masked_frame[nose_mask] = 255
+                masked_frame[lip_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, masked_frame)
+                return masked_frame
+
             case 3: # Face skin isolation
                 face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
                 landmark_screen_coords = []
@@ -277,7 +352,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 return masked_frame
             
             case _:
-                print("Mask_face_region: Undefined facial mask, please specify one of FACE_SKIN_ISOLATION, FACE_OVAL or FACE_OVAL_TIGHT.")
+                print("Mask_face_region: Undefined facial mask, please specify one of FACE_SKIN_ISOLATION, FACE_OVAL, FACE_OVAL_TIGHT.")
                 sys.exit(1)
             
     # Type and value checks for function parameters
@@ -396,8 +471,7 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_SKIN_IS
                 sys.exit(1)
 
 def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list[list[tuple]] | list[tuple], occlusion_fill:int = OCCLUSION_FILL_BLACK,
-                        with_sub_dirs:bool =  False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, 
-                        static_image_mode:bool = False) -> None:
+                        with_sub_dirs:bool =  False, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5) -> None:
     ''' For each video or image contained within the input directory, the landmark regions contained within landmarks_to_occlude 
     will be occluded with either black or the facial mean pixel value. Processed files are then output to Occluded_Video_Output 
     within the specified output directory.
@@ -429,10 +503,6 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
     min_tracking_confidence: float
         A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
         FaceMesh constructor.
-    
-    static_image_mode: bool
-        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than
-        video frames.
         
     Raises
     ------
@@ -449,7 +519,9 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
     global OCCLUSION_FILL_MEAN
     global OCCLUSION_FILL_BAR
     global FACE_OVAL_TIGHT_PATH
+    global FACE_OVAL_PATH
     singleFile = False
+    static_image_mode = False
 
     def occlude_frame(frame:cv.typing.MatLike, mask:cv.typing.MatLike, occlusion_fill:int) -> cv.typing.MatLike:
         match occlusion_fill:
@@ -553,9 +625,6 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
     elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
         raise ValueError("Occlude_face_region: parameter min_tracking_confidence must be in the range [0,1].")
     
-    if not isinstance(static_image_mode, bool):
-        raise TypeError("Occlude_face_region: parameter static_image_mode must be of type bool.")
-    
     # Defining the mediapipe facemesh task
     face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, min_detection_confidence = min_detection_confidence,
                                                 min_tracking_confidence = min_tracking_confidence)
@@ -651,6 +720,141 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
             if isinstance(landmarks_to_occlude[0], list):
                 for landmark_set in landmarks_to_occlude:
 
+                    face_oval_coords = []
+                    # Converting landmark coords to screen coords
+                    for cur_source, cur_target in FACE_OVAL_PATH:
+                        source = landmark_screen_coords[cur_source]
+                        target = landmark_screen_coords[cur_target]
+                        face_oval_coords.append((source.get('x'),source.get('y')))
+                        face_oval_coords.append((target.get('x'),target.get('y')))
+                    
+                    # Creating boolean masks for the face oval
+                    face_oval_mask = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                    face_oval_mask = cv.fillConvexPoly(face_oval_mask, np.array(face_oval_coords), 1)
+                    face_oval_mask = face_oval_mask.astype(bool)
+
+                    max_x = max(face_oval_coords, key=itemgetter(0))[0]
+                    min_x = min(face_oval_coords, key=itemgetter(0))[0]
+
+                    max_y = max(face_oval_coords, key=itemgetter(1))[1]
+                    min_y = min(face_oval_coords, key=itemgetter(1))[1]
+
+                    # Compute the center bisecting lines of the face oval
+                    cx = round((max_y + min_y)/2)           
+                    cy = round((max_x + min_x)/2)
+
+                    match landmark_set:
+                        # Horizontal hemi face top:
+                        case [(0,)]:
+
+                            oval_masked_img = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            oval_masked_img[face_oval_mask] = 255
+
+                            split_line = cx
+                            poly = []
+
+                            for i in range(len(face_oval_coords)):
+                                p1 = face_oval_coords[i]
+                                p2 = face_oval_coords[(i + 1) % len(face_oval_coords)]
+
+                                if (p1[1] < split_line):
+                                    poly.append(p1)
+                                
+                                intersection = compute_line_intersection(p1, p2, split_line, False)
+
+                                if intersection != None:
+                                    poly.append(intersection)
+                            
+                            hemi_face_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            hemi_face_mask = cv.fillConvexPoly(hemi_face_mask, np.array(poly), 1)
+                            hemi_face_mask = hemi_face_mask.astype(bool)
+
+                            masked_frame[hemi_face_mask] = 255
+                            break
+
+                        # Horizontal hemi face bottom:
+                        case [(1,)]:
+                            oval_masked_img = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            oval_masked_img[face_oval_mask] = 255
+
+                            split_line = cx
+                            poly = []
+
+                            for i in range(len(face_oval_coords)):
+                                p1 = face_oval_coords[i]
+                                p2 = face_oval_coords[(i + 1) % len(face_oval_coords)]
+
+                                if (p1[1] > split_line):
+                                    poly.append(p1)
+                                
+                                intersection = compute_line_intersection(p1, p2, split_line, False)
+
+                                if intersection != None:
+                                    poly.append(intersection)
+                            
+                            hemi_face_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            hemi_face_mask = cv.fillConvexPoly(hemi_face_mask, np.array(poly), 1)
+                            hemi_face_mask = hemi_face_mask.astype(bool)
+
+                            masked_frame[hemi_face_mask] = 255
+                            break
+
+                        # Vertical hemi face left:
+                        case [(2,)]:
+                            oval_masked_img = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            oval_masked_img[face_oval_mask] = 255
+
+                            split_line = cy
+                            poly = []
+
+                            for i in range(len(face_oval_coords)):
+                                p1 = face_oval_coords[i]
+                                p2 = face_oval_coords[(i + 1) % len(face_oval_coords)]
+
+                                if (p1[0] < split_line):
+                                    poly.append(p1)
+                                
+                                intersection = compute_line_intersection(p1, p2, split_line, True)
+
+                                if intersection != None:
+                                    poly.append(intersection)
+                            
+                            hemi_face_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            hemi_face_mask = cv.fillConvexPoly(hemi_face_mask, np.array(poly), 1)
+                            hemi_face_mask = hemi_face_mask.astype(bool)
+
+                            masked_frame[hemi_face_mask] = 255
+                            break
+
+                        # Vertical hemi face right
+                        case [(3,)]:
+                            oval_masked_img = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            oval_masked_img[face_oval_mask] = 255
+
+                            split_line = cy
+                            poly = []
+
+                            for i in range(len(face_oval_coords)):
+                                p1 = face_oval_coords[i]
+                                p2 = face_oval_coords[(i + 1) % len(face_oval_coords)]
+
+                                if (p1[0] > split_line):
+                                    poly.append(p1)
+                                
+                                intersection = compute_line_intersection(p1, p2, split_line, True)
+
+                                if intersection != None:
+                                    poly.append(intersection)
+                            
+                            hemi_face_mask = np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8)
+                            hemi_face_mask = cv.fillConvexPoly(hemi_face_mask, np.array(poly), 1)
+                            hemi_face_mask = hemi_face_mask.astype(bool)
+
+                            masked_frame[hemi_face_mask] = 255
+                            break
+                        case _:
+                            continue
+
                     cur_landmark_coords = []
                     # Converting landmark coords to screen coords
                     for cur_source, cur_target in landmark_set:
@@ -692,6 +896,242 @@ def occlude_face_region(input_dir:str, output_dir:str, landmarks_to_occlude:list
         if not static_image_mode:
             capture.release()
             result.release()
+
+def blur_face_region(input_dir:str, output_dir:str, blur_method:str | int = "gaussian", k_size:int = 15, with_sub_dirs:bool = False, 
+                     min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5) -> None:
+    """ For each video or image file within `input_dir`, the specified `blur_method` will be applied. Blurred images and video files
+    are then written out to `output_dir`.
+
+    Parameters
+    ----------
+
+    input_dir: str
+        A path string to a directory containing the image or video files to be processed.
+
+    output_dir: str
+        A path string to a directory where processed files will be written.
+
+    blur_method: str, int
+        Either a string literal ("average", "gaussian", "median"), or a predefined integer constant 
+        (BLUR_METHOD_AVERAGE, BLUR_METHOD_GAUSSIAN, BLUR_METHOD_MEDIAN) specifying the type of blurring operation to be performed.
+    
+    k_size: int
+        Specifies the size of the square kernel used in blurring operations. 
+    
+    with_sub_dirs: bool
+        A boolean flag indicating if the input directory contains nested sub-directories.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+    
+    Raises
+    ------
+
+    TypeError:
+        Given invalid or incompatible input parameter types.
+    ValueError:
+        Given an unrecognized value.
+    OSError:
+        Given invalid path strings to input or output directory.
+
+    """
+
+    global BLUR_METHOD_AVERAGE
+    global BLUR_METHOD_GAUSSIAN
+    global BLUR_METHOD_MEDIAN
+    global FACE_OVAL_PATH
+    singlefile = False
+    static_image_mode = False
+
+    # Performing checks on function parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("Blur_face_region: invalid type for parameter input_dir.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Blur_face_region: input directory path is not a valid path, or the directory does not exist.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("Blur_face_region: parameter output_dir must be a str.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Blur_face_region: output directory path is not a valid path, or the directory does not exist.")
+    elif not os.path.isdir(output_dir):
+        raise ValueError("Blur_face_region: output_dir must be a valid path to a directory.")
+    
+    if isinstance(blur_method, str):
+        if blur_method not in ["average", "Average", "gaussian", "Gaussian", "median", "Median"]:
+            raise ValueError("Blur_face_region: Unrecognised value for parameter blur_method.")
+    elif isinstance(blur_method, int):
+        if blur_method not in [BLUR_METHOD_AVERAGE, BLUR_METHOD_GAUSSIAN, BLUR_METHOD_MEDIAN]:
+            raise ValueError("Blur_face_region: Unrecognised value for parameter blur_method.")
+    else:
+        raise TypeError("Blur_face_region: Incompatable type for parameter blur_method.")
+    
+    if not isinstance(k_size, int):
+        raise TypeError("Blur_face_region: parameter k_size must be of type int.")
+    
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Blur_face_region: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Blur_face_region: parameter min_detection_confidence must be of type float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Blur_face_region: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Blur_face_region: parameter min_tracking_confidence must be of type float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Blur_face_region: parameter min_tracking_confidence must be in the range [0,1].")
+    
+    # Defining the mediapipe facemesh task
+    face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = static_image_mode, min_detection_confidence = min_detection_confidence,
+                                                min_tracking_confidence = min_tracking_confidence)
+
+    # Creating a list of file names to iterate through when processing
+    files_to_process = []
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+        files_to_process = [input_dir + "\\" + file for file in os.listdir(input_dir)]
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    if not os.path.exists(output_dir + "\\Blurred"):
+        os.mkdir(output_dir + "\\Blurred")
+    output_dir = output_dir + "\\Blurred"
+
+    for file in files_to_process:
+
+        # Initialize capture and writer objects
+        filename, extension = os.path.splitext(os.path.basename(file))
+        codec = None
+
+        # Using the file extension to sniff video codec or image container for images
+        match extension:
+            case ".mp4":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".mov":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".jpg" | ".jpeg" | ".png" | ".bmp":
+                static_image_mode = True
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case _:
+                print("Blur_face_region: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
+                sys.exit(1)
+
+        capture = None
+        result = None
+
+        if not static_image_mode:
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened():
+                print("Blur_face_region: Error opening video file.")
+                sys.exit(1)
+
+            size = (int(capture.get(3)), int(capture.get(4)))
+
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_blurred" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Blur_face_region: Error opening VideoWriter object.")
+                sys.exit(1)
+
+        while True:
+
+            if static_image_mode:
+                frame = cv.imread(file)
+            else:
+                success, frame = capture.read()
+                if not success:
+                    break    
+
+            face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+            landmark_screen_coords = []
+
+            if face_mesh_results.multi_face_landmarks:
+                for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                    # Convert normalised landmark coordinates to x-y pixel coordinates
+                    for id,lm in enumerate(face_landmarks.landmark):
+                        ih, iw, ic = frame.shape
+                        x,y = int(lm.x * iw), int(lm.y * ih)
+                        landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+            else:
+                if static_image_mode:
+                    print("Blur_face_region: face mesh detection error.")
+                    sys.exit(1)
+                else: 
+                    continue
+
+            face_outline_coords = []
+            # face oval screen coordinates
+            for cur_source, cur_target in FACE_OVAL_PATH:
+                source = landmark_screen_coords[cur_source]
+                target = landmark_screen_coords[cur_target]
+                face_outline_coords.append((source.get('x'),source.get('y')))
+                face_outline_coords.append((target.get('x'),target.get('y')))
+            
+            oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
+            oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+            oval_mask = oval_mask.astype(bool)
+
+            masked_frame = np.zeros((frame.shape[0], frame.shape[1], 1), dtype=np.uint8)
+            masked_frame[oval_mask] = 255
+
+            frame_blurred = None
+
+            match blur_method:
+                case "average" | "Average":
+                    frame_blurred = cv.blur(frame, (k_size, k_size))
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                case 11:
+                    frame_blurred = cv.blur(frame, (k_size, k_size))
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                
+                case "gaussian" | "Gaussian":
+                    frame_blurred = cv.GaussianBlur(frame, (k_size, k_size), 0)
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                case 12:
+                    frame_blurred = cv.GaussianBlur(frame, (k_size, k_size), 0)
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                
+                case "median" | "Median":
+                    frame_blurred = cv.medianBlur(frame, k_size)
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                case 13:
+                    frame_blurred = cv.medianBlur(frame, k_size)
+                    frame = np.where(masked_frame == 255, frame_blurred, frame)
+                
+                case _:
+                    print("Blur_face_region: Unrecognised value for parameter blur_method.")
+                    sys.exit(1)
+                    
+
+            if static_image_mode:
+                cv.imwrite(output_dir + "\\" + filename + "_blurred" + extension, frame)
+                break
+            else:
+                result.write(frame)
+
+        if not static_image_mode:
+            capture.release()
+            result.release()
+
+# Expand color extraction by allowing custom masks to be passed, would allow dynamic colour extraction from specified regions
 
 def extract_color_channel_means(input_dir:str, output_dir:str, color_space: int|str = COLOR_SPACE_RGB, with_sub_dirs:bool = False, 
                                 mask_face:bool = True, min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5) -> None:
@@ -1051,7 +1491,7 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
     if not isinstance(offset_t, float):
         raise TypeError("Face_color_shift: parameter offset_t must be a float.")
     if not isinstance(shift_magnitude, float):
-        raise TypeError("Face_color_shift: parameter max_color_shift must be a float.")
+        raise TypeError("Face_color_shift: parameter shift_magnitude must be a float.")
     
     if isinstance(timing_func, Callable):
         if not isinstance(timing_func(1.0), float):
@@ -1093,9 +1533,9 @@ def face_color_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_
                             for file in files]
     
     # Creating named output directories for video output
-    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
-        os.mkdir(output_dir + "\\Color_Shifted_Videos")
-    output_dir = output_dir + "\\Color_Shifted_Videos"
+    if not os.path.isdir(output_dir + "\\Color_Shifted"):
+        os.mkdir(output_dir + "\\Color_Shifted")
+    output_dir = output_dir + "\\Color_Shifted"
     
     for file in files_to_process:
             
@@ -1354,7 +1794,7 @@ def face_saturation_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, of
     if not isinstance(offset_t, float):
         raise TypeError("Face_saturation_shift: parameter offset_t must be a float.")
     if not isinstance(shift_magnitude, float):
-        raise TypeError("Face_saturation_shift: parameter max_color_shift must be a float.")
+        raise TypeError("Face_saturation_shift: parameter shift_magnitude must be a float.")
     
     if isinstance(timing_func, Callable):
         if not isinstance(timing_func(1.0), float):
@@ -1387,9 +1827,9 @@ def face_saturation_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, of
                             for file in files]
     
     # Creating named output directories for video output
-    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
-        os.mkdir(output_dir + "\\Color_Shifted_Videos")
-    output_dir = output_dir + "\\Color_Shifted_Videos"
+    if not os.path.isdir(output_dir + "\\Sat_Shifted"):
+        os.mkdir(output_dir + "\\Sat_Shifted")
+    output_dir = output_dir + "\\Sat_Shifted"
     
     for file in files_to_process:
             
@@ -1592,12 +2032,11 @@ def face_saturation_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, of
             capture.release()
             result.release()
 
-def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, shift_magnitude:float = 10.0, 
+def face_brightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, offset_t:float = 0.0, shift_magnitude:int = 20, 
                         timing_func:Callable[..., float] = sigmoid, with_sub_dirs:bool = False, min_detection_confidence:float = 0.5,
                         min_tracking_confidence:float = 0.5) -> None:
-    """For each image or video file contained in input_dir, the function applies a weighted lightness shift to the face region, 
-    outputting each processed file to output_dir. Lightness is defined as the cube root of the relative luminance, and it is used in the 
-    CIE La*b* colour space. Weights are calculated using a passed timing function, that returns a float in the normalised range [0,1].
+    """For each image or video file contained in input_dir, the function applies a weighted brightness shift to the face region, 
+    outputting each processed file to output_dir. Weights are calculated using a passed timing function, that returns a float in the normalised range [0,1].
     (NOTE there is currently no checking to ensure timing function outputs are normalised)
 
     Parameters
@@ -1610,13 +2049,13 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
         A path string to the directory where outputted video files will be saved.
     
     onset_t: float
-        The onset time of the colour shifting.
+        The onset time of the brightness shifting.
     
     offset_t: float
-        The offset time of the colour shifting.
+        The offset time of the brightness shifting.
     
     shift_magnitude: float
-        The maximum units to shift the luminance by, during peak onset.
+        The maximum units to shift the brightness by, during peak onset.
     
     timingFunc: Function() -> float
         Any function that takes at least one input float (time), and returns a float.
@@ -1652,43 +2091,42 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
     
     # Performing checks on function parameters
     if not isinstance(input_dir, str):
-        raise TypeError("Face_lightness_shift: invalid type for parameter input_dir.")
+        raise TypeError("Face_brightness_shift: invalid type for parameter input_dir.")
     elif not os.path.exists(input_dir):
-        raise OSError("Face_lightness_shift: input directory path is not a valid path, or the directory does not exist.")
+        raise OSError("Face_brightness_shift: input directory path is not a valid path, or the directory does not exist.")
     elif os.path.isfile(input_dir):
         singleFile = True
     
     if not isinstance(output_dir, str):
-        raise TypeError("Face_lightness_shift: parameter output_dir must be a str.")
+        raise TypeError("Face_brightness_shift: parameter output_dir must be a str.")
     elif not os.path.exists(output_dir):
-        raise OSError("Face_lightness_shift: output directory path is not a valid path, or the directory does not exist.")
+        raise OSError("Face_brightness_shift: output directory path is not a valid path, or the directory does not exist.")
     elif not os.path.isdir(output_dir):
-        raise ValueError("Face_lightness_shift: output_dir must be a valid path to a directory.")
+        raise ValueError("Face_brightness_shift: output_dir must be a valid path to a directory.")
     
     if not isinstance(onset_t, float):
-        raise TypeError("Face_lightness_shift: parameter onset_t must be a float.")
+        raise TypeError("Face_brightness_shift: parameter onset_t must be a float.")
     if not isinstance(offset_t, float):
-        raise TypeError("Face_lightness_shift: parameter offset_t must be a float.")
-    if not isinstance(shift_magnitude, float):
-        raise TypeError("Face_lightness_shift: parameter max_color_shift must be a float.")
+        raise TypeError("Face_brightness_shift: parameter offset_t must be a float.")
+    if not isinstance(shift_magnitude, int):
+        raise TypeError("Face_brightness_shift: parameter shift_magnitude must be an int.")
     
     if isinstance(timing_func, Callable):
         if not isinstance(timing_func(1.0), float):
-            raise ValueError("Face_lightness_shift: timing_func must return a float value.")
-    # add check for return value in range [0,1]
+            raise ValueError("Face_brightness_shift: timing_func must return a float value.")
 
     if not isinstance(with_sub_dirs, bool):
-        raise TypeError("Face_lightness_shift: parameter with_sub_dirs must be of type bool.")
+        raise TypeError("Face_brightness_shift: parameter with_sub_dirs must be of type bool.")
     
     if not isinstance(min_detection_confidence, float):
-        raise TypeError("Face_lightness_shift: parameter min_detection_confidence must be of type float.")
+        raise TypeError("Face_brightness_shift: parameter min_detection_confidence must be of type float.")
     elif min_detection_confidence < 0 or min_detection_confidence > 1:
-        raise ValueError("Face_lightness_shift: parameter min_detection_confidence must be in the range [0,1].")
+        raise ValueError("Face_brightness_shift: parameter min_detection_confidence must be in the range [0,1].")
     
     if not isinstance(min_tracking_confidence, float):
-        raise TypeError("Face_lightness_shift: parameter min_tracking_confidence must be of type float.")
+        raise TypeError("Face_brightness_shift: parameter min_tracking_confidence must be of type float.")
     elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
-        raise ValueError("Face_lightness_shift: parameter min_tracking_confidence must be in the range [0,1].")
+        raise ValueError("Face_brightness_shift: parameter min_tracking_confidence must be in the range [0,1].")
     
     # Creating a list of file path strings to iterate through when processing
     files_to_process = []
@@ -1703,9 +2141,9 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
                             for file in files]
     
     # Creating named output directories for video output
-    if not os.path.isdir(output_dir + "\\Color_Shifted_Videos"):
-        os.mkdir(output_dir + "\\Color_Shifted_Videos")
-    output_dir = output_dir + "\\Color_Shifted_Videos"
+    if not os.path.isdir(output_dir + "\\Brightness_Shifted"):
+        os.mkdir(output_dir + "\\Brightness_Shifted")
+    output_dir = output_dir + "\\Brightness_Shifted"
     
     for file in files_to_process:
             
@@ -1733,13 +2171,13 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
                 face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
                             min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
             case _:
-                print("Face_lightness_shift: Incompatible video or image file type. Please see psyfaceutils.transcode_video_to_mp4().")
+                print("Face_brightness_shift: Incompatible video or image file type. Please see psyfaceutils.transcode_video_to_mp4().")
                 sys.exit(1)
         
         if not static_image_mode:
             capture = cv.VideoCapture(file)
             if not capture.isOpened():
-                print("Face_lightness_shift: Error opening video file.")
+                print("Face_brightness_shift: Error opening video file.")
                 sys.exit(1)
             
             size = (int(capture.get(3)), int(capture.get(4)))
@@ -1747,7 +2185,7 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
             result = cv.VideoWriter(output_dir + "\\" + filename + "_light_shifted" + extension,
                                     cv.VideoWriter.fourcc(*codec), 30, size)
             if not result.isOpened():
-                print("Face_lightness_shift: Error opening VideoWriter object.")
+                print("Face_brightness_shift: Error opening VideoWriter object.")
                 sys.exit(1)
             
             # Getting the video duration for weight calculations
@@ -1833,7 +2271,7 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
             oval_mask = oval_mask.astype(bool)
 
             # Masking the face oval
-            masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+            masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
             masked_frame[oval_mask] = 255
             masked_frame[le_mask] = 0
             masked_frame[re_mask] = 0
@@ -1854,9 +2292,6 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
             floodfilled = cv.bitwise_not(floodfilled)
             foreground = cv.bitwise_or(thresholded, floodfilled)
 
-            #TODO investigate white artifacts when negative lightness shifting
-            # it may have something to do with when lightness is set below 0
-
             if not static_image_mode:
                 # Getting the current video timestamp
                 dt = capture.get(cv.CAP_PROP_POS_MSEC)/1000
@@ -1866,45 +2301,37 @@ def face_lightness_shift(input_dir:str, output_dir:str, onset_t:float = 0.0, off
                 elif dt < offset_t:
                     weight = timing_func(dt)
 
-                    img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
-                    l,a,b = cv.split(img_lab)
+                    img_brightened = frame.copy()
+                    img_brightened = np.where(masked_frame == 255, cv.convertScaleAbs(src=img_brightened, alpha=1, beta=(weight * shift_magnitude)), frame)
 
-                    l = np.where(masked_frame == 255, l + (weight * shift_magnitude), l)
-                    np.clip(l, 0, 100)
-                    img_lab = cv.merge([l,a,b])
+                    #cv.convertScaleAbs(img_brightened, img_brightened, 1, (weight * shift_magnitude))
 
-                    img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
-                    img_bgr[foreground == 0] = frame[foreground == 0]
-                    result.write(img_bgr)
+                    img_brightened[foreground == 0] = frame[foreground == 0]
+                    result.write(img_brightened)
                 else:
                     dt = cap_duration - dt
                     weight = timing_func(dt)
 
-                    img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
-                    l,a,b = cv.split(img_lab)
+                    img_brightened = frame.copy()
+                    img_brightened = np.where(masked_frame == 255, cv.convertScaleAbs(src=img_brightened, alpha=1, beta=(weight * shift_magnitude)), frame)
 
-                    l = np.where(masked_frame == 255, l + (weight * shift_magnitude), l)
-                    np.clip(l, 0, 100)
-                    img_lab = cv.merge([l,a,b])
+                    #cv.convertScaleAbs(img_brightened, img_brightened, 1, (weight * shift_magnitude))
 
-                    img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
-                    img_bgr[foreground == 0] = frame[foreground == 0]
-                    result.write(img_bgr)
+                    img_brightened[foreground == 0] = frame[foreground == 0]
+                    result.write(img_brightened)
 
             else:
-                img_lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB).astype(np.float32)
-                l,a,b = cv.split(img_lab)
+                # Brightening the image
+                img_brightened = frame.copy()
+                img_brightened = np.where(masked_frame == 255, cv.convertScaleAbs(src=img_brightened, alpha=1, beta=shift_magnitude), frame)
 
-                l = np.where(masked_frame == 255, l + shift_magnitude, l)
-                np.clip(l, 0, 100)
-                img_lab = cv.merge([l,a,b])
+                # Making sure background remains unaffected
+                img_brightened[foreground == 0] = frame[foreground == 0]
 
-                img_bgr = cv.cvtColor(img_lab.astype(np.uint8), cv.COLOR_LAB2BGR)
-                img_bgr[foreground == 0] = frame[foreground == 0]
-                success = cv.imwrite(output_dir + "\\" + filename + "_light_shifted" + extension, img_bgr)
+                success = cv.imwrite(output_dir + "\\" + filename + "_brightened" + extension, img_brightened)
 
                 if not success:
-                    print("Face_lightness_shift: cv2.imwrite error.")
+                    print("Face_brightness_shift: cv2.imwrite error.")
                     sys.exit(1)
 
                 break

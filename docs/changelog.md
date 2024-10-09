@@ -6,13 +6,41 @@ All notable changes to this project will be documented in this file.
 - v0.5... unit testing
 - v1.0 gui preview prior to file processing
 
+## [0.5.2] - 2024-10-09
+
+### Added
+
+- `Occlude_face_region` can now perform vertical and horizontal hemi-face occlusion. Hemi-face masks rely on the facial screen coords, thus they cannot be precomputed. However, predefined placeholder constants `HEMI_FACE_TOP`, `HEMI_FACE_BOTTOM`, `HEMI_FACE_LEFT`, and `HEMI_FACE_RIGHT` have been defined and can still be passed in `landmarks_to_occlude` as any of the other predefined landmark paths can. 
+- Helper function `compute_line_intersection` has been created and can be found in `psyfaceutils.py`.
+- Additional masking option `EYES_NOSE_MOUTH_MASK` has been added to `mask_face_region`.
+
+### Changed
+
+### Removed
+
+- Predefined landmark paths `UPPER_FACE_PATH` and `LOWER_FACE_PATH` have been removed, and replaced with `HEMI_FACE_TOP`, and `HEMI_FACE_BOTTOM` respectively.
+
+## [0.5.1] - 2024-10-03
+
+### Added
+
+- `Blur_face_region` provides dynamic facial blurring functionality with several blurring methods (average, gaussian, median) over user-specified facial regions. 
+- Added horizontal hemi-face occlusion, `UPPER_FACE_PATH` and `LOWER_FACE_PATH` constants can be found in psyfaceutils.py.
+
+### Changed
+
+- `Face_luminance_shift` has been replaced with `face_brightness_shift`. `Face_brightness_shift` will now take an integer shift value in the range [-255, 255], with -255 and 255 representing pure black and white respectively. 
+
+### Removed
+
+- `Face_luminance_shift` has been removed due to buggy behaviour when manipulating image luminance.
+
 ## [0.5.0] - 2024-09-24
 
 ### Added
 
 - Package documentation is now built with MKDocs
-- Face_saturation_shift and Face_luminance_shift are now standalone functions, where previously saturation and luma parameters were
-passed to the Face_color_shift function. 
+- `Face_saturation_shift` and `Face_luminance_shift` are now standalone functions, where previously saturation and luma parameters were passed to the Face_color_shift function. 
 - Github.io hosting for documentation page, as well as refactored github landing page and readme.md.
 - License.txt added to root project structure.
 
