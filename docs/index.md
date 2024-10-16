@@ -4,7 +4,11 @@ hide:
   - toc
 ---
 
-# PsyFace
+<div class="flex-header" markdown>
+  <h1 markdown>PsyFace</h1>
+  [View On Github :simple-github:](https://github.com/Gavin-Bosman/PsyFace){ .md-button .md-button--primary }
+  [Open Documentation :material-book:](./reference.md){.md-button }
+</div>
 
 <div class="grid cards" markdown>
 
@@ -25,10 +29,5 @@ hide:
 
     ***
 
-    ![img](./images/pyplot_figure_2.png){align=right}
+    ![img](./images/output_grid.png){align=right}
 </div>
-
-
-[View On Github :simple-github:](https://github.com/Gavin-Bosman/PsyFace){ .md-button .md-button--primary }
-[Open Documentation :material-book:](./reference.md){.md-button }
-

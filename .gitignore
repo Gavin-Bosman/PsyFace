@@ -2,10 +2,10 @@ Video_Song_Actors_01-24/
 Video_Speech_Actors_01-24/
 __pycache__/
 source/__pycache__/
-Color_Shifted_Videos/
-Masked_Video_Output/
-Occluded_Video_Output/
-Blurred_Video_Output/
+Color_Shifted/
+Masked/
+Occluded/
+Blurred/
 Brightness_Shifted/
 Sat_Shifted/
 Color_Channel_Means/

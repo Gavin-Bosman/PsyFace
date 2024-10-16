@@ -17,6 +17,8 @@ FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397,
                  152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10]
 FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
             152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
+LEFT_CHEEK_IDX = [207, 187, 147, 123, 116, 111, 31, 228, 229, 230, 231, 232, 233, 128, 114, 217, 198, 209, 49, 203, 206, 207]
+RIGHT_CHEEK_IDX = [427, 411, 376, 352, 345, 340, 261, 448, 449, 450, 451, 452, 453, 357, 343, 437, 420, 429, 279, 423, 426, 427]
 
 def create_path(landmark_set:list[int]) -> list[tuple]:
     """Given a list of facial landmarks (int), returns a list of tuples, creating a closed path in the form 
@@ -96,7 +98,7 @@ def compute_line_intersection(p1:tuple, p2:tuple, line:int, vertical:bool=False)
     
     return None
 
-# Preconstructed face region paths for use with facial manipulation functions
+# Preconstructed face region paths for use with facial manipulation functions. Landmarks below are convex polygons
 LEFT_EYE_PATH = create_path(LEFT_EYE_IDX)
 LEFT_IRIS_PATH = create_path(LEFT_IRIS_IDX)
 RIGHT_EYE_PATH = create_path(RIGHT_EYE_IDX)
@@ -106,10 +108,18 @@ LIPS_PATH = create_path(LIPS_IDX)
 LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
 FACE_OVAL_TIGHT_PATH = create_path(FACE_OVAL_TIGHT_IDX)
+
+# The following landmark regions need to be partially computed in place, but paths have been created so they can still be 
+# passed to the facial manipulation family of functions. Landmarks below are concave polygons.
 HEMI_FACE_TOP = [(0,)]
 HEMI_FACE_BOTTOM = [(1,)]
 HEMI_FACE_LEFT = [(2,)]
 HEMI_FACE_RIGHT = [(3,)]
+LEFT_CHEEK_PATH = [(7,)]
+RIGHT_CHEEK_PATH = [(8,)]
+CHEEKS_PATH = [(4,)]
+CHEEKS_NOSE_PATH = [(5,)]
+FACE_SKIN_PATH = [(6,)]
 
 # Masking options for mask_face_region
 FACE_OVAL_MASK = 1
@@ -128,6 +138,12 @@ COLOR_RED = 4
 COLOR_BLUE = 5
 COLOR_GREEN = 6
 COLOR_YELLOW = 7
+
+# Coloring regions
+REGION_FULL_FACE = 15
+REGION_CHEEKS = 16
+REGION_CHEEKS_NOSE = 17
+COLOR_REGION_OPTIONS = [REGION_FULL_FACE, REGION_CHEEKS, REGION_CHEEKS_NOSE]
 
 # Fill options for occluded face regions
 OCCLUSION_FILL_BLACK = 8
@@ -336,7 +352,11 @@ def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = F
 
 
 # Defining useful timing functions
-def sigmoid(t:float, k:float = 1.0) -> float:
+def sigmoid(t:float, **kwargs) -> float:
+    k = 1
+    if "k" in kwargs:
+        k = kwargs["k"]
+
     return 1/(1 + np.exp(-k * t))
 
 def linear(t:float, **kwargs) -> float:

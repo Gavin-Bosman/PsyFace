@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 - v0.5... unit testing
 - v1.0 gui preview prior to file processing
 
+## [0.5.3 - 0.5.5] - 2024-10-16
+
+### Added
+
+- Major feature updates to all facial manipulation functions. `face_color_shift`, `face_saturation_shift`, `face_brightness_shift` and `blur_face_region` now are all compatible with timing functions, and every predefined landmark region defined within `psyfaceutils.py`. 
+- Some of the landmark paths have been redefined as placeholders, as they either need to be calculated in place (hemi-face regions) or require a different method to draw the landmark polygons (Cheek landmark regions form concave polygons).
+- `FACE_SKIN_PATH` constant has been defined in order to provided easier access to facial skin colouring, leaving the lips and eyes untouched. For similar ease of use reasons, other commonly used grouped regions have been defined, including `CHEEKS_PATH` and `CHEEKS_NOSE_PATH` for use in facial "blushing".
+
+### Changed
+
+### Removed
+
+- Bad practice global variable declarations have been removed entirely. 
+
 ## [0.5.2] - 2024-10-09
 
 ### Added

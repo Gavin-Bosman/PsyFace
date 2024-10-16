@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#code-reference" class="md-skip">
+        <a href="#api-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -370,11 +370,62 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dynamic-facial-masking" class="md-nav__link">
+  <a href="#facial-masking" class="md-nav__link">
     <span class="md-ellipsis">
-      Dynamic Facial Masking
+      Facial Masking
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-facial-occlusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic Facial Occlusion
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#facial-colour-shifting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Facial Colour Shifting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Facial Colour Shifting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#face_color_shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      face_color_shift( )
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#face_saturation_shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      face_saturation_shift( )
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#face_lightness_shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      face_lightness_shift( )
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -498,50 +549,323 @@
                   
 
 
-<h1 id="code-reference">Code Reference</h1>
-<h2 id="dynamic-facial-masking">Dynamic Facial Masking</h2>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">mask_face_region</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">mask_type</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="n">FACE_SKIN_ISOLATION</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                     <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies specified mask type to video or image files located in input_dir, then outputs masked files to output_dir.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-
-<span class="sd">    input_dir: str</span>
-<span class="sd">        A path string of the directory containing files to process.</span>
-
-<span class="sd">    output_dir: str</span>
-<span class="sd">        A path string of the directory where processed videos and images will be written to.</span>
-
-<span class="sd">    mask_type: int</span>
-<span class="sd">        An integer indicating the type of mask to apply to the input videos. This can be one of three mask configuration options: FACE_OVAL, FACE_OVAL_TIGHT, FACE_SKIN_ISOLATION</span>
-
-<span class="sd">    with_sub_dirs: bool</span>
-<span class="sd">        Indicates if the input directory contains nested subdirectories.</span>
-
-<span class="sd">    min_detection_confidence: float</span>
-<span class="sd">        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe </span>
-<span class="sd">        FaceMesh constructor.</span>
-
-<span class="sd">    min_tracking_confidence: float</span>
-<span class="sd">        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe </span>
-<span class="sd">        FaceMesh constructor.</span>
-
-<span class="sd">    static_image_mode: bool</span>
-<span class="sd">        A boolean flag indicating to the mediapipe FaceMesh that it is working with static images rather than</span>
-<span class="sd">        video frames.</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-
-<span class="sd">    ValueError </span>
-<span class="sd">        Given an unknown mask type.</span>
-<span class="sd">    TypeError </span>
-<span class="sd">        Given invalid parameter types.</span>
-<span class="sd">    OSError: </span>
-<span class="sd">        Given invalid path strings for in/output directories</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
+<h1 id="api-reference">API Reference</h1>
+<h2 id="facial-masking">Facial Masking</h2>
+<p><code>mask_face_region</code> will apply the specified <code>mask_type</code> to all files contained in <code>input_dir</code>, outputting masked images and videos to <code>output_dir</code>\Masked_Video_Output.</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">mask_face_region</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">mask_type</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="n">FACE_SKIN_ISOLATION</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>input_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory containing files to process.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>output_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory where processed files will be output.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>mask_type</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">int</span></code></td>
+<td style="text-align: left;">An integer flag specifying the type of masking operation being performed. One of <code>FACE_OVAL</code>, <code>FACE_OVAL_TIGHT</code> OR <code>FACE_SKIN_ISOLATION</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>with_sub_dirs</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating if the input directory contains sub-directories.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_detection_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_tracking_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>static_image_mode</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating that the current filetype is static images.</td>
+</tr>
+</tbody>
+</table>
+<details class="info" open="open">
+<summary>Info</summary>
+<p>Parameters <code>min_detection_confidence</code>, <code>min_tracking_confidence</code>, and <code>static_image_mode</code> are passed directly to the declaration of the MediaPipe FaceMesh model. </p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">mediapipe</span> <span class="k">as</span> <span class="nn">mp</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">face_mesh</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">solutions</span><span class="o">.</span><span class="n">face_mesh</span><span class="o">.</span><span class="n">FaceMesh</span><span class="p">(</span><span class="n">max_num_faces</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">min_detection_confidence</span> <span class="o">=</span> <span class="n">min_detection_confidence</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>                                    <span class="n">min_tracking_confidence</span> <span class="o">=</span> <span class="n">min_tracking_confidence</span><span class="p">,</span> <span class="n">static_image_mode</span> <span class="o">=</span> <span class="n">static_image_mode</span><span class="p">)</span>
+</span></code></pre></div>
+<p>For more information on MediaPipes FaceMesh solution, <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker">see here.</a></p>
+</details>
+<h2 id="dynamic-facial-occlusion">Dynamic Facial Occlusion</h2>
+<p><code>occlude_face_region</code> takes the landmark regions specified within <code>landmarks_to_occlude</code>, and occludes them with the specified method for each image or video file present within the input directory provided in <code>input_dir</code>. Processed videos will be written to <code>output_dir</code>\Occluded_Video_Output.</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span> <span class="nf">occlude_face_region</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">landmarks_to_occlude</span><span class="p">:</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span> 
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">occlusion_fill</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="n">OCCLUSION_FILL_BLACK</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span>  <span class="kc">False</span><span class="p">,</span> <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">static_image_mode</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>input_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory containing files to process.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>output_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory where processed files will be output.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>landmarks_to_occlude</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span></code></td>
+<td style="text-align: left;">One or more lists of facial landmark paths. These paths can be manually created using <code>psyfaceutils.create_path()</code>, or you may use any of the library provided predefined landmark paths.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>occlusion_fill</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">int</span></code></td>
+<td style="text-align: left;">An integer flag indicating the occlusion method to be used. One of <code>OCCLUSION_FILL_BLACK</code>, <code>OCCLUSION_FILL_MEAN</code> or <code>OCCLUSION_FILL_BAR</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>with_sub_dirs</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating if the input directory contains sub-directories.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_detection_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_tracking_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>static_image_mode</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating that the current filetype is static images.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="facial-colour-shifting">Facial Colour Shifting</h2>
+<h3 id="face_color_shift">face_color_shift( )</h3>
+<p><code>face_color_shift</code> performs a weighted color shift on the color channel specified in <code>shift_color</code>, weighted by the outputs of the provided <code>timing_func</code>. Parameters <code>onset_t</code> and <code>offset_t</code> can be used to specify when the color shifting fades in and fades out (this only applies to video files). <code>face_color_shift</code> makes use of the CIELAB color space to perform color shifting, due to it being far more perceptually uniform than the standard RGB or BGR color spaces.</p>
+<details class="note" open="open">
+<summary>Note</summary>
+<p><code>face_color_shift</code> requires the outputs of the provided <code>timing_func</code> to be normalised; that is, in the range [0,1]. Predefined normalised functions such as <code>sigmoid</code>, <code>linear</code> and <code>gaussian</code> are available for use in <code>psyfaceutils</code>. Extra parameters for these functions can be passed to <code>face_color_shift</code> as keyword arguments. Users may also define their own timing functions, but it is up to the user to ensure their functions take at least one input float parameter, and that the return value is within the normal range.</p>
+</details>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span> <span class="nf">face_color_shift</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">onset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">shift_magnitude</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">8.0</span><span class="p">,</span> <span class="n">timing_func</span><span class="p">:</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">shift_color</span><span class="p">:</span><span class="nb">str</span><span class="o">|</span><span class="nb">int</span> <span class="o">=</span> <span class="n">COLOR_RED</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> 
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>input_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory containing files to process.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>output_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory where processed files will be output.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>onset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The onset time when colour shifting will begin.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>offset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The offset time when colour shifting will begin to fade out.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>shift_magnitude</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The maximum units to shift the specified colour channel by, during peak onset.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>timing_func</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span></code></td>
+<td style="text-align: left;">Any function that takes at least one float, and returns a normalised float value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>shift_colour</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span></code></td>
+<td style="text-align: left;">Either a string literal (i.e. "red"), or a predefined integer constant; one of <code>COLOR_RED</code>, <code>COLOR_BLUE</code>, <code>COLOR_GREEN</code> or <code>COLOR_YELLOW</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>with_sub_dirs</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating if the input directory contains sub-directories.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_detection_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_tracking_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="face_saturation_shift">face_saturation_shift( )</h3>
+<p><code>face_saturation_shift</code> performs a weighted saturation shift in a near identical manner to <code>face_color_shift</code> above. This function makes use of the HSV color space to manipulate saturation. </p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span> <span class="nf">face_saturation_shift</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">onset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">shift_magnitude</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">8.0</span><span class="p">,</span> 
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                          <span class="n">timing_func</span><span class="p">:</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>                           <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>input_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory containing files to process.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>output_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory where processed files will be output.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>onset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The onset time when colour shifting will begin.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>offset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The offset time when colour shifting will begin to fade out.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>shift_magnitude</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The maximum units to shift the specified colour channel by, during peak onset.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>timing_func</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span></code></td>
+<td style="text-align: left;">Any function that takes at least one float, and returns a normalised float value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>with_sub_dirs</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating if the input directory contains sub-directories.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_detection_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_tracking_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="face_lightness_shift">face_lightness_shift( )</h3>
+<p><code>face_lightness_shift</code> performs a weighted lightness shift in a near identical manner to <code>face_color_shift</code> above. Lightness, represented by the L in the CIELAB color space, is taken as the cube root of the relative luminosity. Lightness ranges from 0-100, with black being defined as 0, and pure white being defined as 100.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Lightness manipulation can cause unexpected behaviour when the initial lightness value is unknown. <code>face_lightness_shift</code> is currently experimental, so results may vary depending on the input files you are working with. Proceed with caution.</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span> <span class="nf">face_lightness_shift</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">onset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">offset_t</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">shift_magnitude</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> 
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                        <span class="n">timing_func</span><span class="p">:</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">with_sub_dirs</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">min_detection_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                        <span class="n">min_tracking_confidence</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>input_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory containing files to process.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>output_dir</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">str</span></code></td>
+<td style="text-align: left;">A path string to the directory where processed files will be output.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>onset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The onset time when colour shifting will begin.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>offset_t</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The offset time when colour shifting will begin to fade out.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>shift_magnitude</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">The maximum units to shift the specified colour channel by, during peak onset.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>timing_func</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span></code></td>
+<td style="text-align: left;">Any function that takes at least one float, and returns a normalised float value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>with_sub_dirs</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">bool</span></code></td>
+<td style="text-align: left;">A boolean flag indicating if the input directory contains sub-directories.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_detection_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>min_tracking_confidence</code></td>
+<td style="text-align: left;"><code class="language-python highlight"><span class="nb">float</span></code></td>
+<td style="text-align: left;">A confidence measure in the range [0,1], passed on to the MediaPipe FaceMesh model.</td>
+</tr>
+</tbody>
+</table>
 
 
 
