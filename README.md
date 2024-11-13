@@ -4,7 +4,7 @@ PsyFace is a python package for dynamic region occlusion and skin colour modific
 PsyFace enables researchers to apply complex facial manipulations to just the face in dynamic video and still images scenes in several lines of code.
 Here is an example of PsyFace performing pixel-level modifications to create new videos from the original one:
 
-![PsyFace pixel-level Operations](./docs/images/pyplot_figure_2.png)
+![PsyFace pixel-level Operations](./docs/images/output_grid.png)
 
 ## Statement of Need
 
@@ -20,7 +20,7 @@ in_dir = ".\<your input directory>"
 out_dir = ".\<your output directory>"
 
 # Psyface provides an extensive list of predefined landmark paths, as well as several predefined occlusion types
-pf.occlude_face_region(input_dir = in_dir, output_dir = out_dir, landmarks_to_occlude = [LEFT_EYE_PATH, RIGHT_EYE_PATH], occlusion_fill = OCCLUSION_FILL_BAR)
+pf.occlude_face_region(input_dir = in_dir, output_dir = out_dir, landmarks_to_occlude = BOTH_EYES_PATH, occlusion_fill = OCCLUSION_FILL_BAR)
 ```
 
 ### Before

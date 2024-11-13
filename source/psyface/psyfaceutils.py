@@ -5,20 +5,29 @@ import os
 import sys
 
 # Defining pertinent facemesh landmark sets
+FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 366, 401, 288, 397, 365, 379, 378, 400, 377, 
+                 152, 148, 176, 149, 150, 136, 172, 58, 177, 137, 234, 127, 162, 21, 54, 103, 67, 109, 10]
+FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
+            152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
+
 LEFT_EYE_IDX = [301, 334, 296, 336, 285, 413, 464, 453, 452, 451, 450, 449, 448, 261, 265, 383, 301]
-LEFT_IRIS_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
+LEFT_IRIS_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
 RIGHT_EYE_IDX = [71, 105, 66, 107, 55, 189, 244, 233, 232, 231, 230, 229, 228, 31, 35, 156, 71]
-RIGHT_IRIS_IDX = [33, 7, 163, 144, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
+RIGHT_IRIS_IDX = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263]
+
 NOSE_IDX = [168, 193, 122, 196, 174, 217, 209, 49, 129, 64, 235, 75, 60, 125, 19, 462, 290, 305, 439, 
             278, 279, 429, 437, 399, 419, 351, 417, 168]
 LIPS_IDX = [164, 393, 391, 322, 410, 287, 273, 335, 406, 313, 18, 83, 182, 106, 43, 57, 186, 92, 165, 167, 164]
 LIPS_TIGHT_IDX = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 0, 37, 39, 40, 185, 61]
-FACE_OVAL_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 
-                 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10]
-FACE_OVAL_TIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 345, 352, 376, 433, 397, 365, 379, 378, 400, 377, 
-            152, 148, 176, 149, 150, 136, 172, 213, 147, 123, 116, 127, 162, 21, 54, 103, 67, 109, 10]
-LEFT_CHEEK_IDX = [207, 187, 147, 123, 116, 111, 31, 228, 229, 230, 231, 232, 233, 128, 114, 217, 198, 209, 49, 203, 206, 207]
-RIGHT_CHEEK_IDX = [427, 411, 376, 352, 345, 340, 261, 448, 449, 450, 451, 452, 453, 357, 343, 437, 420, 429, 279, 423, 426, 427]
+LEFT_CHEEK_IDX = [207, 187, 147, 123, 116, 111, 31, 228, 229, 230, 231, 232, 233, 188, 196, 174, 217, 209, 49, 203, 206, 207]
+RIGHT_CHEEK_IDX = [427, 411, 376, 352, 345, 340, 261, 448, 449, 450, 451, 452, 453, 412, 419, 399, 437, 429, 279, 423, 426, 427]
+CHIN_IDX = [43, 106, 182, 83, 18, 313, 406, 335, 273, 422, 430, 394, 379, 378, 400, 377, 152, 148, 176, 149, 150, 169, 210, 202, 43]
+
+HEMI_FACE_TOP_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 366, 137, 234, 127, 162, 21, 54, 103, 67, 109, 10]
+HEMI_FACE_BOTTOM_IDX = [366, 401, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 177, 137, 366]
+HEMI_FACE_LEFT_IDX = [152, 148, 176, 149, 150, 136, 172, 58, 177, 137, 234, 127, 162, 21, 54, 103, 67, 109, 10, 152]
+HEMI_FACE_RIGHT_IDX = [10, 338, 297, 332, 284, 251, 389, 356, 454, 366, 401, 288, 397, 365, 379, 378, 400, 377, 152, 10]
+
 
 def create_path(landmark_set:list[int]) -> list[tuple]:
     """Given a list of facial landmarks (int), returns a list of tuples, creating a closed path in the form 
@@ -108,18 +117,20 @@ LIPS_PATH = create_path(LIPS_IDX)
 LIPS_TIGHT_PATH = create_path(LIPS_TIGHT_IDX)
 FACE_OVAL_PATH = create_path(FACE_OVAL_IDX)
 FACE_OVAL_TIGHT_PATH = create_path(FACE_OVAL_TIGHT_IDX)
+HEMI_FACE_TOP_PATH = create_path(HEMI_FACE_TOP_IDX)
+HEMI_FACE_BOTTOM_PATH = create_path(HEMI_FACE_BOTTOM_IDX)
+HEMI_FACE_LEFT_PATH = create_path(HEMI_FACE_LEFT_IDX)
+HEMI_FACE_RIGHT_PATH = create_path(HEMI_FACE_RIGHT_IDX)
 
 # The following landmark regions need to be partially computed in place, but paths have been created so they can still be 
 # passed to the facial manipulation family of functions. Landmarks below are concave polygons.
-HEMI_FACE_TOP = [(0,)]
-HEMI_FACE_BOTTOM = [(1,)]
-HEMI_FACE_LEFT = [(2,)]
-HEMI_FACE_RIGHT = [(3,)]
-LEFT_CHEEK_PATH = [(7,)]
-RIGHT_CHEEK_PATH = [(8,)]
-CHEEKS_PATH = [(4,)]
-CHEEKS_NOSE_PATH = [(5,)]
-FACE_SKIN_PATH = [(6,)]
+CHEEKS_PATH = [(0,)]
+LEFT_CHEEK_PATH = [(1,)]
+RIGHT_CHEEK_PATH = [(2,)]
+CHEEKS_NOSE_PATH = [(3,)]
+BOTH_EYES_PATH = [(4,)]
+FACE_SKIN_PATH = [(5,)]
+CHIN_PATH = [(6,)]
 
 # Masking options for mask_face_region
 FACE_OVAL_MASK = 1
@@ -130,7 +141,7 @@ MASK_OPTIONS = [FACE_OVAL_MASK, FACE_OVAL_TIGHT_MASK, FACE_SKIN_MASK, EYES_NOSE_
 
 # Compatible color spaces for extract_color_channel_means and face_color_shift
 COLOR_SPACE_RGB = cv.COLOR_BGR2RGB
-COLOR_SPACE_HSV = cv.COLOR_BGR2HSV
+COLOR_SPACE_HSV = cv.COLOR_BGR2HSV_FULL
 COLOR_SPACE_GRAYSCALE = cv.COLOR_BGR2GRAY
 COLOR_SPACES = [COLOR_SPACE_RGB, COLOR_SPACE_HSV, COLOR_SPACE_GRAYSCALE]
 
@@ -184,10 +195,6 @@ def get_min_max_bgr(filePath:str, focusColor:int|str = COLOR_RED) -> tuple:
     max_color: array of int
         A BGR colour code (ie. (100, 105, 80)) containing the minimum value of the focus color.
     """
-
-    global COLOR_RED
-    global COLOR_BLUE
-    global COLOR_GREEN
 
     # Type and value checking before computation
     if not isinstance(filePath, str):
@@ -352,6 +359,9 @@ def transcode_video_to_mp4(input_dir:str, output_dir:str, with_sub_dirs:bool = F
 
 
 # Defining useful timing functions
+def constant(t:float, **kwargs) -> float:
+    return 1.0
+
 def sigmoid(t:float, **kwargs) -> float:
     k = 1
     if "k" in kwargs:
@@ -377,8 +387,11 @@ def linear(t:float, **kwargs) -> float:
 
     weight: float
     '''
-
-    start = kwargs["start"]
+    start = 0.0
+    if "start" in kwargs:
+        start = kwargs["start"]
+    
+    # end kwarg is always passed internally by package functions
     end = kwargs["end"]
 
     return (t-start) / (end-start)

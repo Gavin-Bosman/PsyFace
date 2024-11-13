@@ -3,20 +3,17 @@ from psyface.psyfaceutils import *
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-#TODO add more timing functions, constricted to normalised output
-#TODO add expanded masking options to face brightness/saturation shifting
-
-#in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\Video_Song_Actors_01-24\\Video_Song_Actor_01\\Actor_01\\01-02-01-01-01-02-01.mp4"
+#in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\Video_Song_Actors_01-24\\Video_Song_Actor_08\\Actor_08\\01-02-05-01-01-01-08.mp4"
 in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images\\Actor_08.png"
 out_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images"
 
 #TODO potentially reprocess colour data with cv.COLOR_BGR2HSV_FULL for full range of hue values
 #pf.mask_face_region(input_dir=in_dir, output_dir=out_dir, mask_type=EYES_NOSE_MOUTH_MASK)
-pf.face_color_shift(input_dir=in_dir, output_dir=out_dir, shift_color="red", landmarks_to_color=[LEFT_CHEEK_PATH, LIPS_TIGHT_PATH], shift_magnitude=15.0)
-#pf.occlude_face_region(in_dir, out_dir, [RIGHT_CHEEK_PATH], OCCLUSION_FILL_BLACK)
-#pf.extract_color_channel_means(in_dir, out_dir)
-#pf.face_brightness_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=30)
-#pf.face_saturation_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=20.0)
+#pf.face_color_shift(input_dir=in_dir, output_dir=out_dir, shift_color="red", landmark_regions=[LEFT_CHEEK_PATH, CHIN_PATH], shift_magnitude=15.0)
+#pf.occlude_face_region(in_dir, out_dir, [CHIN_PATH, LEFT_CHEEK_PATH, RIGHT_IRIS_PATH], OCCLUSION_FILL_BLACK)
+#pf.extract_face_color_means(in_dir, out_dir)
+#pf.face_brightness_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=-30, landmark_regions=[HEMI_FACE_TOP_PATH])
+#pf.face_saturation_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=-20.0, landmark_regions=[LEFT_CHEEK_PATH, CHIN_PATH])
 #pf.blur_face_region(input_dir=in_dir, output_dir=out_dir, blur_method="Gaussian", k_size=91)
 
 # Creating pyplot style grid of outputs
@@ -27,9 +24,8 @@ im1 = cv.cvtColor(cv.imread("images\\Actor_08.png"), cv.COLOR_BGR2RGB)
 im1 = cv.copyMakeBorder(im1, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
 im2 = cv.cvtColor(cv.imread("images\\Actor_08_color_shifted.png"), cv.COLOR_BGR2RGB)
 im2 = cv.copyMakeBorder(im2, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
-im3 = cv.cvtColor(cv.imread("images\\Actor_08_brightened.png"), cv.COLOR_BGR2RGB)
+im3 = cv.cvtColor(cv.imread("images\\Actor_08_sat_brightened.png"), cv.COLOR_BGR2RGB)
 im3 = cv.copyMakeBorder(im3, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
-
 
 im4 = cv.cvtColor(cv.imread("images\\Actor_01_occluded_bar.png"), cv.COLOR_BGR2RGB)
 im4 = cv.copyMakeBorder(im4, top=5, bottom=5, left=5, right=5, borderType=cv.BORDER_CONSTANT, value=0)
@@ -58,7 +54,7 @@ plt.title('Color-shifted', fontsize=10)
 fig.add_subplot(3,3,3)
 plt.imshow(im3)
 plt.axis('off')
-plt.title('Brightness-shifted', fontsize=10)
+plt.title('Desaturated & \nBrightness shifted', fontsize=10)
 
 fig.add_subplot(3,3,4)
 plt.imshow(im4)

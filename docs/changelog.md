@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 - v0.5... unit testing
 - v1.0 gui preview prior to file processing
 
+## [0.5.6] - 2024-11-12
+
+### Added
+
+- Bug fixes for last major feature update (v0.5.5).
+- `CHIN_PATH` has been added as a predefined path for use with all facial manipulation functions.
+- `extract_color_channel_means` has been renamed as `extract_face_color_means`. The function now will not only output full-facial means, but also regional color means in the cheek, nose and chin areas for all colour spaces. 
+
+### Changed
+
+- The Hemi-face family of landmark paths have been converted to standard paths, and no longer require in-place computation. 
+- `occlude_face_region`'s implementation of bar-style occlusion has been reworked, such that now the occluding bar will track correctly with the position of the face and axis of the head (the occluding bar no longer remains paralell to the horizontal axis).
+- `face_color_shift`, `face_saturation_shift` and `face_brightness_shift` now only take list[list[tuple]] for input parameter `landmark_regions`. This massively reduces the ammount of duplicate code previously divided among if-else statements based on what was passed to `landmark_regions`.
+
+### Removed
+
 ## [0.5.3 - 0.5.5] - 2024-10-16
 
 ### Added
