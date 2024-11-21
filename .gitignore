@@ -9,6 +9,7 @@ Blurred/
 Brightness_Shifted/
 Sat_Shifted/
 Color_Channel_Means/
+Noise_Added/
 Makefile
 make.bat
 source/OpenCV_References

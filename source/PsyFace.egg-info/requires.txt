@@ -1,6 +1,0 @@
-opencv-python
-mediapipe
-pandas
-sphinx
-sphinx_rtd_theme
-numpy==2.0.0

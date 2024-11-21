@@ -3,17 +3,25 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PsyFace"
-version = "0.5.3"
+name = "PyFAME"
+version = "0.5.7"
+authors = [
+    { name="Gavin Bosman", email="gavin.bosman12@gmail.com" },
+]
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "opencv-python",
     "mediapipe",
     "pandas",
-    "numpy == 2.0.0"
+    "numpy == 2.0.0",
+    "scikit-image"
 ]
+
+[project.urls]
+Homepage = "https://github.com/Gavin-Bosman/PyFAME"
 
 [tool.setuptools.packages.find]
 where = ["source"]
-include = ["psyface*"]
+include = ["pyfame*"]
 exclude = ["processing_script.py"]

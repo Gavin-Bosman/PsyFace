@@ -3,14 +3,15 @@ import cv2.typing
 import mediapipe as mp
 import numpy as np
 import pandas as pd
+from skimage.util import *
 import os
 import sys
 from typing import Callable
-from .psyfaceutils import *
+from .pyfameutils import *
 from operator import itemgetter
 from math import atan
 
-def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MASK, with_sub_dirs:bool = False,
+def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MASK, with_sub_dirs:bool = False, background_color: tuple[int] = (255,255,255),
                      min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5, static_image_mode:bool = False) -> None:
     """Applies specified mask type to video files located in input_dir, then outputs masked videos to output_dir.
 
@@ -24,11 +25,14 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MA
         A path string of the directory where processed videos will be written to.
 
     mask_type: int
-        An integer indicating the type of mask to apply to the input videos. This can be one of four options:
-        FACE_OVAL_MASK, FACE_OVAL_TIGHT_MASK, FACE_SKIN_MASK or EYES_NOSE_MOUTH_MASK.
+        An integer indicating the type of mask to apply to the input videos. For a full list of mask options please see
+        pyfameutils.MASK_OPTIONS.
 
     with_sub_dirs: bool
         Indicates if the input directory contains subfolders.
+    
+    background_color: tuple of int
+        A BGR color code specifying the output files background color.
 
     min_detection_confidence: float
         A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
@@ -53,113 +57,69 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MA
         Given invalid path strings for in/output directories
     """
 
-    global MASK_OPTIONS
-    global FACE_OVAL_MASK
-    global FACE_OVAL_TIGHT_MASK
-    global FACE_SKIN_MASK
-    global EYES_NOSE_MOUTH_MASK
-
-    global LEFT_EYE_PATH
-    global RIGHT_EYE_PATH
-    global LIPS_PATH
-    global NOSE_PATH
-    global FACE_OVAL_PATH
-    global FACE_OVAL_TIGHT_PATH
     singleFile = False
+    static_image_mode = False
 
     def process_frame(frame: cv.typing.MatLike, mask_type: int) -> cv.typing.MatLike:
+
+        face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+        landmark_screen_coords = []
+
+        if face_mesh_results.multi_face_landmarks:
+            for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                # Convert normalised landmark coordinates to x-y pixel coordinates
+                for id,lm in enumerate(face_landmarks.landmark):
+                    ih, iw, ic = frame.shape
+                    x,y = int(lm.x * iw), int(lm.y * ih)
+                    landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+        else:
+            print("Mask_face_region: Face mesh detection error.")
+            sys.exit(1)
+
         match mask_type:
-            case 14: # Eyes nose mouth mask
-                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
-                landmark_screen_coords = []
 
-                if face_mesh_results.multi_face_landmarks:
-                    for face_landmarks in face_mesh_results.multi_face_landmarks:
-
-                        # Convert normalised landmark coordinates to x-y pixel coordinates
-                        for id,lm in enumerate(face_landmarks.landmark):
-                            ih, iw, ic = frame.shape
-                            x,y = int(lm.x * iw), int(lm.y * ih)
-                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
-                else:
-                    print("Mask_face_region: Face mesh detection error.")
-                    sys.exit(1)
-
-                le_screen_coords = []
-                re_screen_coords = []
-                nose_screen_coords = []
-                lips_screen_coords = []
-
-                 # left eye screen coordinates
-                for cur_source, cur_target in LEFT_EYE_PATH:
-                    source = landmark_screen_coords[cur_source]
-                    target = landmark_screen_coords[cur_target]
-                    le_screen_coords.append((source.get('x'),source.get('y')))
-                    le_screen_coords.append((target.get('x'),target.get('y')))
+            case 1: # Face oval mask
+                face_outline_coords = []
                 
-                # right eye screen coordinates
-                for cur_source, cur_target in RIGHT_EYE_PATH:
+                # face oval screen coordinates
+                for cur_source, cur_target in FACE_OVAL_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
-                    re_screen_coords.append((source.get('x'),source.get('y')))
-                    re_screen_coords.append((target.get('x'),target.get('y')))
-                
-                # nose screen coordinates
-                for cur_source, cur_target in NOSE_PATH:
-                    source = landmark_screen_coords[cur_source]
-                    target = landmark_screen_coords[cur_target]
-                    nose_screen_coords.append((source.get('x'),source.get('y')))
-                    nose_screen_coords.append((target.get('x'),target.get('y')))
+                    face_outline_coords.append((source.get('x'),source.get('y')))
+                    face_outline_coords.append((target.get('x'),target.get('y')))
 
-                # lips screen coordinates
-                for cur_source, cur_target in LIPS_PATH:
-                    source = landmark_screen_coords[cur_source]
-                    target = landmark_screen_coords[cur_target]
-                    lips_screen_coords.append((source.get('x'),source.get('y')))
-                    lips_screen_coords.append((target.get('x'),target.get('y')))
+                oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
+                oval_mask = oval_mask.astype(bool)
 
-                # Creating boolean masks for the facial regions
-                le_mask = np.zeros((frame.shape[0],frame.shape[1]))
-                le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
-                le_mask = le_mask.astype(bool)
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
 
-                re_mask = np.zeros((frame.shape[0],frame.shape[1]))
-                re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
-                re_mask = re_mask.astype(bool)
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
 
-                nose_mask = np.zeros((frame.shape[0], frame.shape[1]))
-                nose_mask = cv.fillConvexPoly(nose_mask, np.array(nose_screen_coords), 1)
-                nose_mask = nose_mask.astype(bool)
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
 
-                lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
-                lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
-                lip_mask = lip_mask.astype(bool)
+                # Masking the face oval
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
+                masked_frame[oval_mask] = 255
 
-                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
-                masked_frame[le_mask] = 255
-                masked_frame[re_mask] = 255
-                masked_frame[nose_mask] = 255
-                masked_frame[lip_mask] = 255
+                # Remove unwanted background inclusions in the masked area
+                masked_frame = cv.bitwise_and(masked_frame, foreground)
+                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
 
-                masked_frame = np.where(masked_frame == 255, frame, 255)
                 return masked_frame
 
-            case 3: # Face skin isolation
-                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
-                landmark_screen_coords = []
-
-                if face_mesh_results.multi_face_landmarks:
-                    for face_landmarks in face_mesh_results.multi_face_landmarks:
-
-                        # Convert normalised landmark coordinates to x-y pixel coordinates
-                        for id,lm in enumerate(face_landmarks.landmark):
-                            ih, iw, ic = frame.shape
-                            x,y = int(lm.x * iw), int(lm.y * ih)
-                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
-                else:
-                    print("Mask_face_region: Face mesh detection error.")
-                    sys.exit(1)
-
+            case 2: # Face skin isolation
                 le_screen_coords = []
                 re_screen_coords = []
                 lips_screen_coords = []
@@ -233,98 +193,119 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MA
                 masked_frame[le_mask] = 0
                 masked_frame[re_mask] = 0
                 masked_frame[lip_mask] = 0
-
-                # Last step, masking out the bounding face shape
+                
+                # Remove unwanted background inclusions in the masked area
                 masked_frame = cv.bitwise_and(masked_frame, foreground)
                 masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
-                frame = cv.bitwise_and(frame, frame, mask = foreground)
-                masked_frame = np.where(masked_frame == 255, frame, 255)
-                # masked_frame = np.where(masked_frame == 255, frame, masked_frame) for black background in output
-                return masked_frame
-
-            case 2: # Face oval tight
-                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
-                landmark_screen_coords = []
-
-                if face_mesh_results.multi_face_landmarks:
-                    for face_landmarks in face_mesh_results.multi_face_landmarks:
-
-                        # Convert normalised landmark coordinates to x-y pixel coordinates
-                        for id,lm in enumerate(face_landmarks.landmark):
-                            ih, iw, ic = frame.shape
-                            x,y = int(lm.x * iw), int(lm.y * ih)
-                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
-                else:
-                    print("Mask_face_region: Face mesh detection error.")
-                    sys.exit(1)
-
-                face_outline_coords = []
-                
-                # face oval screen coordinates
-                for cur_source, cur_target in FACE_OVAL_TIGHT_PATH:
-                    source = landmark_screen_coords[cur_source]
-                    target = landmark_screen_coords[cur_target]
-                    face_outline_coords.append((source.get('x'),source.get('y')))
-                    face_outline_coords.append((target.get('x'),target.get('y')))
-
-                oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
-                oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
-                oval_mask = oval_mask.astype(bool)
-
-                # Otsu thresholding to seperate foreground and background
-                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
-                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
-
-                # Adding a temporary image border to allow for correct floodfill behaviour
-                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
-                floodfilled = bordered_thresholded.copy()
-                cv.floodFill(floodfilled, None, (0,0), 255)
-
-                # Removing temporary border and creating foreground mask
-                floodfilled = floodfilled[10:-10, 10:-10]
-                floodfilled = cv.bitwise_not(floodfilled)
-                foreground = cv.bitwise_or(thresholded, floodfilled)
-
-                # Masking the face oval
-                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
-                masked_frame[oval_mask] = 255
-
-                # Last step, masking out the bounding face shape
-                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
-                frame = cv.bitwise_and(frame, frame, foreground)
-                masked_frame = np.where(masked_frame == 255, frame, 255)
-
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
                 return masked_frame
             
-            case 1: # Face oval
-                face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
-                landmark_screen_coords = []
+            case 3: # Both eyes mask
+                le_screen_coords = []
+                re_screen_coords = []
 
-                if face_mesh_results.multi_face_landmarks:
-                    for face_landmarks in face_mesh_results.multi_face_landmarks:
-
-                        # Convert normalised landmark coordinates to x-y pixel coordinates
-                        for id,lm in enumerate(face_landmarks.landmark):
-                            ih, iw, ic = frame.shape
-                            x,y = int(lm.x * iw), int(lm.y * ih)
-                            landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
-                else:
-                    print("Mask_face_region: Face mesh detection error.")
-                    sys.exit(1)
-
-                face_outline_coords = []
-                
-                # face oval screen coordinates
-                for cur_source, cur_target in FACE_OVAL_PATH:
+                # left eye screen coordinates
+                for cur_source, cur_target in LEFT_EYE_PATH:
                     source = landmark_screen_coords[cur_source]
                     target = landmark_screen_coords[cur_target]
-                    face_outline_coords.append((source.get('x'),source.get('y')))
-                    face_outline_coords.append((target.get('x'),target.get('y')))
+                    le_screen_coords.append((source.get('x'),source.get('y')))
+                    le_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # right eye screen coordinates
+                for cur_source, cur_target in RIGHT_EYE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    re_screen_coords.append((source.get('x'),source.get('y')))
+                    re_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                le_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+                le_mask = le_mask.astype(bool)
 
-                oval_mask = np.zeros((frame.shape[0],frame.shape[1]))
-                oval_mask = cv.fillConvexPoly(oval_mask, np.array(face_outline_coords), 1)
-                oval_mask = oval_mask.astype(bool)
+                re_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+                re_mask = re_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
+                masked_frame[le_mask] = 255
+                masked_frame[re_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+            
+            case 21: # Both irises mask
+                li_screen_coords = []
+                ri_screen_coords = []
+
+                # Left iris screen coordinates
+                for cur_source, cur_target in LEFT_IRIS_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    li_screen_coords.append((source.get('x'),source.get('y')))
+                    li_screen_coords.append((target.get('x'), target.get('y')))
+                
+                # Right iris screen coordinates
+                for cur_source, cur_target in RIGHT_IRIS_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    ri_screen_coords.append((source.get('x'),source.get('y')))
+                    ri_screen_coords.append((target.get('x'), target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                li_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                li_mask = cv.fillConvexPoly(li_mask, np.array(li_screen_coords), 1)
+                li_mask = li_mask.astype(bool)
+
+                ri_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                ri_mask = cv.fillConvexPoly(ri_mask, np.array(ri_screen_coords), 1)
+                ri_mask = ri_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
+                masked_frame[li_mask] = 255
+                masked_frame[ri_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+            
+            case 22: # Lips mask
+                lips_screen_coords = []
+
+                # Lips screen coordinates
+                for cur_source, cur_target in LIPS_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    lips_screen_coords.append((source.get('x'),source.get('y')))
+                    lips_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+                lip_mask = lip_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
+                masked_frame[lip_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+
+            case 23: # Hemi-face left mask
+                hfl_screen_coords = []
+
+                # Left Hemi-face screen coordinates
+                for cur_source, cur_target in HEMI_FACE_LEFT_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    hfl_screen_coords.append((source.get('x'),source.get('y')))
+                    hfl_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                hfl_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                hfl_mask = cv.fillConvexPoly(hfl_mask, np.array(hfl_screen_coords), 1)
+                hfl_mask = hfl_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0], frame.shape[1], 1), dtype=np.uint8)
+                masked_frame[hfl_mask] = 255
 
                 # Otsu thresholding to seperate foreground and background
                 grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -341,15 +322,169 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MA
                 floodfilled = cv.bitwise_not(floodfilled)
                 foreground = cv.bitwise_or(thresholded, floodfilled)
 
-                # Masking the face oval
-                masked_frame = np.zeros((frame.shape[0],frame.shape[1]), dtype=np.uint8)
-                masked_frame[oval_mask] = 255
+                # Remove unwanted background inclusions in the masked area
+                masked_frame = cv.bitwise_and(masked_frame, foreground)
+                masked_frame = masked_frame.reshape(masked_frame.shape[0], masked_frame.shape[1], 1)
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
 
-                # Last step, masking out the bounding face shape
-                masked_frame = np.reshape(masked_frame, (masked_frame.shape[0], masked_frame.shape[1], 1))
-                frame = cv.bitwise_and(frame, frame, foreground)
-                masked_frame = np.where(masked_frame == 255, frame, 255)
+            case 24: # Hemi-face right mask
+                hfr_screen_coords = []
 
+                # Right hemi-face screen coordinates
+                for cur_source, cur_target in HEMI_FACE_RIGHT_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    hfr_screen_coords.append((source.get('x'),source.get('y')))
+                    hfr_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                hfr_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                hfr_mask = cv.fillConvexPoly(hfr_mask, np.array(hfr_screen_coords), 1)
+                hfr_mask = hfr_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0], frame.shape[1], 1), dtype=np.uint8)
+                masked_frame[hfr_mask] = 255
+
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
+
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
+
+                # Remove unwanted background inclusions in the masked area
+                masked_frame = cv.bitwise_and(masked_frame, foreground)
+                masked_frame = masked_frame.reshape(masked_frame.shape[0], masked_frame.shape[1], 1)
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+            
+            case 25: # Hemi-face bottom mask
+                hfb_screen_coords = []
+
+                # Bottom hemi-face screen coordinates
+                for cur_source, cur_target in HEMI_FACE_BOTTOM_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    hfb_screen_coords.append((source.get('x'),source.get('y')))
+                    hfb_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                hfb_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                hfb_mask = cv.fillConvexPoly(hfb_mask, np.array(hfb_screen_coords), 1)
+                hfb_mask = hfb_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0], frame.shape[1], 1), dtype=np.uint8)
+                masked_frame[hfb_mask] = 255
+
+                # Otsu thresholding to seperate foreground and background
+                grey_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                grey_blurred = cv.GaussianBlur(grey_frame, (7,7), 0)
+                thresh_val, thresholded = cv.threshold(grey_blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+
+                # Adding a temporary image border to allow for correct floodfill behaviour
+                bordered_thresholded = cv.copyMakeBorder(thresholded, 10, 10, 10, 10, cv.BORDER_CONSTANT)
+                floodfilled = bordered_thresholded.copy()
+                cv.floodFill(floodfilled, None, (0,0), 255)
+
+                # Removing temporary border and creating foreground mask
+                floodfilled = floodfilled[10:-10, 10:-10]
+                floodfilled = cv.bitwise_not(floodfilled)
+                foreground = cv.bitwise_or(thresholded, floodfilled)
+
+                # Remove unwanted background inclusions in the masked area
+                masked_frame = cv.bitwise_and(masked_frame, foreground)
+                masked_frame = masked_frame.reshape(masked_frame.shape[0], masked_frame.shape[1], 1)
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+            
+            case 26: # Hemi-face top mask
+                hft_screen_coords = []
+
+                # Bottom hemi-face screen coordinates
+                for cur_source, cur_target in HEMI_FACE_TOP_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    hft_screen_coords.append((source.get('x'),source.get('y')))
+                    hft_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # Creating boolean masks for the facial regions
+                hft_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                hft_mask = cv.fillConvexPoly(hft_mask, np.array(hft_screen_coords), 1)
+                hft_mask = hft_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0], frame.shape[1], 1), dtype=np.uint8)
+                masked_frame[hft_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
+                return masked_frame
+
+            case 14: # Eyes nose mouth mask
+                le_screen_coords = []
+                re_screen_coords = []
+                nose_screen_coords = []
+                lips_screen_coords = []
+
+                # left eye screen coordinates
+                for cur_source, cur_target in LEFT_EYE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    le_screen_coords.append((source.get('x'),source.get('y')))
+                    le_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # right eye screen coordinates
+                for cur_source, cur_target in RIGHT_EYE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    re_screen_coords.append((source.get('x'),source.get('y')))
+                    re_screen_coords.append((target.get('x'),target.get('y')))
+                
+                # nose screen coordinates
+                for cur_source, cur_target in NOSE_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    nose_screen_coords.append((source.get('x'),source.get('y')))
+                    nose_screen_coords.append((target.get('x'),target.get('y')))
+
+                # lips screen coordinates
+                for cur_source, cur_target in LIPS_PATH:
+                    source = landmark_screen_coords[cur_source]
+                    target = landmark_screen_coords[cur_target]
+                    lips_screen_coords.append((source.get('x'),source.get('y')))
+                    lips_screen_coords.append((target.get('x'),target.get('y')))
+
+                # Creating boolean masks for the facial regions
+                le_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                le_mask = cv.fillConvexPoly(le_mask, np.array(le_screen_coords), 1)
+                le_mask = le_mask.astype(bool)
+
+                re_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                re_mask = cv.fillConvexPoly(re_mask, np.array(re_screen_coords), 1)
+                re_mask = re_mask.astype(bool)
+
+                nose_mask = np.zeros((frame.shape[0], frame.shape[1]))
+                nose_mask = cv.fillConvexPoly(nose_mask, np.array(nose_screen_coords), 1)
+                nose_mask = nose_mask.astype(bool)
+
+                lip_mask = np.zeros((frame.shape[0],frame.shape[1]))
+                lip_mask = cv.fillConvexPoly(lip_mask, np.array(lips_screen_coords), 1)
+                lip_mask = lip_mask.astype(bool)
+
+                masked_frame = np.zeros((frame.shape[0],frame.shape[1],1), dtype=np.uint8)
+                masked_frame[le_mask] = 255
+                masked_frame[re_mask] = 255
+                masked_frame[nose_mask] = 255
+                masked_frame[lip_mask] = 255
+
+                masked_frame = np.where(masked_frame == 255, frame, background_color)
                 return masked_frame
             
             case _:
@@ -370,10 +505,15 @@ def mask_face_region(input_dir:str, output_dir:str, mask_type:int = FACE_OVAL_MA
         raise ValueError("Mask_face_region: output directory path is not a valid path, or the directory does not exist.")
     
     if mask_type not in MASK_OPTIONS:
-        raise ValueError("Mask_face_region: mask_type must be either 1: indicating FACE_OVAL, 2: indicating FACE_OVAL_TIGHT, or 3: indicating FACE_SKIN_ISOLATION.")
+        raise ValueError("Mask_face_region: mask_type must be one of the predefined constants defined within pyfameutils.MASK_OPTIONS")
     
     if not isinstance(with_sub_dirs, bool):
         raise TypeError("Mask_face_region: parameter with_sub_dirs must be of type bool.")
+    
+    if not isinstance(background_color, tuple):
+        raise TypeError("Mask_face_region: parameter background_color must be of type tuple.")
+    elif len(background_color) < 3:
+        raise ValueError("Mask_face_region: parameter background_color expects a length 3 tuple of integers.")
     
     if not isinstance(min_detection_confidence, float):
         raise TypeError("Mask_face_region: parameter min_detection_confidence must be of type float.")
@@ -1351,6 +1491,263 @@ def blur_face_region(input_dir:str, output_dir:str, blur_method:str | int = "gau
                 break
             else:
                 result.write(frame)
+
+        if not static_image_mode:
+            capture.release()
+            result.release()
+
+def apply_noise(input_dir:str, output_dir:str, noise_method:str|int = "pixelate", output_size:tuple[int] = (32,32), noise_prob:float = 0.5,
+                rand_seed:int | None = None, mean:float = 0.0, standard_dev:float = 0.5, with_sub_dirs:bool = False, 
+                min_detection_confidence:float = 0.5, min_tracking_confidence:float = 0.5) -> None:
+    """Takes an input image or video file, and applies the specified noise method to the image or each frame of the video. For
+    noise_method `pixelate`, an output image size must be specified in order to resize the image/frame's pixels.
+
+    Parameters
+    ----------
+
+    input_dir: str
+        A path string to a directory containing the video files to be processed.
+
+    output_dir: str
+        A path string to a directory where outputted csv files will be written to.
+
+    noise_method: str|int
+        Either an integer flag, or string literal specifying the noise method of choice. 
+
+    output_size: None|tuple[int]
+        The resulting output size of the image or video frames after pixelization.
+    
+    noise_prob: float
+        The probability of noise being applied to a given pixel, default is 0.5.
+    
+    rand_seed: int | None
+        A seed for the random number generator used in gaussian and salt and pepper noise. Allows the user 
+        to create reproducable results. 
+    
+    mean: float
+        The mean or center of the gaussian distribution used when sampling for gaussian noise.
+
+    standard_dev: float
+        The standard deviation or variance of the gaussian distribution used when sampling for gaussian noise.
+
+    with_sub_dirs: bool
+        Indicates whether the input directory contains subfolders.
+    
+    min_detection_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+
+    min_tracking_confidence: float
+        A normalised float value in the range [0,1], this parameter is passed as a specifier to the mediapipe 
+        FaceMesh constructor.
+    
+    Raises
+    ------
+
+    """
+    
+    singleFile = False
+    static_image_mode = False
+
+    # Type and value checking input parameters
+    if not isinstance(input_dir, str):
+        raise TypeError("Apply_noise: input_dir must be a path string.")
+    elif not os.path.exists(input_dir):
+        raise OSError("Apply_noise: input_dir is not a valid path.")
+    elif os.path.isfile(input_dir):
+        singleFile = True
+    
+    if not isinstance(output_dir, str):
+        raise TypeError("Apply_noise: output_dir must be a path string.")
+    elif not os.path.exists(output_dir):
+        raise OSError("Apply_noise: output_dir is not a valid path.")
+    elif not os.path.isdir(output_dir):
+        raise OSError("Apply_noise: output_dir must be a path string to a directory.")
+    
+    if not isinstance(noise_method, int):
+        if not isinstance(noise_method, str):
+            raise TypeError("Apply_noise: parameter noise_method must be either int or str.")
+        elif str.lower(noise_method) not in ["salt and pepper", "pixelate", "gaussian"]:
+            raise ValueError("Apply_noise: parameter noise method must be one of 'salt and pepper', 'pixelate' or 'gaussian'.")
+    elif noise_method not in [NOISE_METHOD_SALT_AND_PEPPER, NOISE_METHOD_PIXELATE, NOISE_METHOD_GAUSSIAN]:
+        raise ValueError("Apply_noise: parameter noise method must be one of 'salt and pepper', 'pixelate' or 'gaussian'.")
+    
+    if not isinstance(output_size, tuple):
+        raise TypeError("Apply_noise: parameter output_size expects a tuple of integers.")
+    elif not isinstance(output_size[0], int) or not isinstance(output_size[1], int):
+        raise ValueError("Apply_noise: parameter output_size expects integer values for it's dimensions.")
+    
+    if not isinstance(noise_prob, float):
+        raise TypeError("Apply_noise: parameter noise_prob expects a float.")
+    elif noise_prob < 0 or noise_prob > 1:
+        raise ValueError("Apply_noise: parameter noise_prob must lie in the range [0,1].")
+    
+    if rand_seed is not None:
+        if not isinstance(rand_seed, int):
+            raise TypeError("Apply_noise: parameter rand_seed expects an integer.")
+    
+    if not isinstance(mean, float):
+        raise TypeError("Apply_noise: parameter mean expects a float.")
+    
+    if not isinstance(standard_dev, float):
+        raise TypeError("Apply_noise: parameter standard_dev expects a float.")
+    
+    if not isinstance(with_sub_dirs, bool):
+        raise TypeError("Apply_noise: parameter with_sub_dirs expects a boolean.")
+    
+    if not isinstance(min_detection_confidence, float):
+        raise TypeError("Apply_noise: parameter min_detection_confidence expects a float.")
+    elif min_detection_confidence < 0 or min_detection_confidence > 1:
+        raise ValueError("Apply_noise: parameter min_detection_confidence must be in the range [0,1].")
+    
+    if not isinstance(min_tracking_confidence, float):
+        raise TypeError("Apply_noise: parameter min_tracking_confidence expects a float.")
+    elif min_tracking_confidence < 0 or min_tracking_confidence > 1:
+        raise ValueError("Apply_noise: parameter min_tracking_confidence must be in the range [0,1].")
+
+    # Creating a list of file path strings to iterate through when processing
+    files_to_process = []
+
+    if singleFile:
+        files_to_process.append(input_dir)
+    elif not with_sub_dirs:
+        files_to_process = [input_dir + "\\" + file for file in os.listdir(input_dir)]
+    else:
+        files_to_process = [os.path.join(path, file) 
+                            for path, dirs, files in os.walk(input_dir, topdown=True) 
+                            for file in files]
+    
+    # Creating named output directories for video output
+    if not os.path.isdir(output_dir + "\\Noise_Added"):
+        os.mkdir(output_dir + "\\Noise_Added")
+    output_dir = output_dir + "\\Noise_Added"
+    
+    for file in files_to_process:
+            
+        # Filetype is used to determine the functions running mode
+        filename, extension = os.path.splitext(os.path.basename(file))
+        codec = None
+        capture = None
+        result = None
+
+        # Using the file extension to sniff video codec or image container for images
+        match extension:
+            case ".mp4":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".mov":
+                codec = "MP4V"
+                static_image_mode = False
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = False, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case ".jpg" | ".jpeg" | ".png" | ".bmp":
+                static_image_mode = True
+                face_mesh = mp.solutions.face_mesh.FaceMesh(max_num_faces = 1, static_image_mode = True, 
+                            min_detection_confidence = min_detection_confidence, min_tracking_confidence = min_tracking_confidence)
+            case _:
+                print("Apply_noise: Incompatible video or image file type. Please see utils.transcode_video_to_mp4().")
+                sys.exit(1)
+        
+        if not static_image_mode:
+            capture = cv.VideoCapture(file)
+            if not capture.isOpened():
+                print("Apply_noise: Error opening video file.")
+                sys.exit(1)
+            
+            size = (int(capture.get(3)), int(capture.get(4)))
+
+            result = cv.VideoWriter(output_dir + "\\" + filename + "_noise_added" + extension,
+                                    cv.VideoWriter.fourcc(*codec), 30, size)
+            if not result.isOpened():
+                print("Apply_noise: Error opening VideoWriter object.")
+                sys.exit(1)
+
+        # Main Processing loop for video files (will only iterate once over images)
+        while True:
+            frame = None
+            if static_image_mode:
+                frame = cv.imread(file)
+            else:
+                success, frame = capture.read()
+                if not success:
+                    break    
+
+            face_mesh_results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+            landmark_screen_coords = []
+
+            if face_mesh_results.multi_face_landmarks:
+                for face_landmarks in face_mesh_results.multi_face_landmarks:
+
+                    # Convert normalised landmark coordinates to x-y pixel coordinates
+                    for id,lm in enumerate(face_landmarks.landmark):
+                        ih, iw, ic = frame.shape
+                        x,y = int(lm.x * iw), int(lm.y * ih)
+                        landmark_screen_coords.append({'id':id, 'x':x, 'y':y})
+            else:
+                continue
+            
+            output_frame = frame.copy()
+            if isinstance(noise_method, str):
+                noise_method = str.lower(noise_method)
+
+            match noise_method:
+                case 'pixelate' | 18:
+                    height, width = output_frame.shape[:2]
+                    h, w = output_size
+
+                    temp = cv.resize(frame, (w, h), None, 0, 0, cv.INTER_LINEAR)
+                    output_frame = cv.resize(temp, (width, height), None, 0, 0, cv.INTER_NEAREST)
+
+                case 'salt and pepper' | 19:
+                    # Divide prob in 2 for "salt" and "pepper"
+                    thresh = noise_prob
+                    noise_prob = noise_prob/2
+                    rng = None
+
+                    if rand_seed is not None:
+                        rng = np.random.default_rng(rand_seed)
+                    else:
+                        rng = np.random.default_rng()
+                    
+                    # Use numpy's random number generator to generate a random matrix in the shape of the frame
+                    rdm = rng.random(output_frame.shape[:2])
+
+                    # Create boolean masks 
+                    pepper_mask = rdm < noise_prob
+                    salt_mask = (rdm >= noise_prob) & (rdm < thresh)
+                    
+                    # Apply boolean masks
+                    output_frame[pepper_mask] = [0,0,0]
+                    output_frame[salt_mask] = [255,255,255]
+                
+                case 'gaussian' | 20:
+                    var = standard_dev**2
+                    rng = None
+
+                    if rand_seed is not None:
+                        rng = np.random.default_rng(rand_seed)
+                    else:
+                        rng = np.random.default_rng()
+
+                    # scikit-image's random_noise function works with floating point images, need to convert our frame's type
+                    output_frame = img_as_float64(output_frame)
+                    output_frame = random_noise(image=output_frame, mode='gaussian', rng=rng, mean=mean, var=var)
+                    output_frame = img_as_ubyte(output_frame)
+
+                case _:
+                    print("Apply_noise: incompatible value for parameter noise_method.")
+                    sys.exit(1)
+
+            if not static_image_mode:
+                result.write(output_frame)
+            else:
+                success = cv.imwrite(output_dir + "\\" + filename + "_noise_added" + extension, output_frame)
+                if not success:
+                    print("Apply_noise: Cv2 imwrite error.")
+                    sys.exit(1)
+                break
 
         if not static_image_mode:
             capture.release()

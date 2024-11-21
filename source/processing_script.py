@@ -1,5 +1,5 @@
-import psyface.psyface as pf
-from psyface.psyfaceutils import *
+import pyfame.pyfame as pf
+from pyfame.pyfameutils import *
 import cv2 as cv
 import matplotlib.pyplot as plt
 
@@ -8,13 +8,14 @@ in_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images\\Actor_08.png"
 out_dir = "C:\\Users\\gavin\\Desktop\\OpenCV\\images"
 
 #TODO potentially reprocess colour data with cv.COLOR_BGR2HSV_FULL for full range of hue values
-#pf.mask_face_region(input_dir=in_dir, output_dir=out_dir, mask_type=EYES_NOSE_MOUTH_MASK)
+#pf.mask_face_region(input_dir=in_dir, output_dir=out_dir, mask_type=HEMI_FACE_BOTTOM_MASK, background_color=(125,125,255))
 #pf.face_color_shift(input_dir=in_dir, output_dir=out_dir, shift_color="red", landmark_regions=[LEFT_CHEEK_PATH, CHIN_PATH], shift_magnitude=15.0)
-#pf.occlude_face_region(in_dir, out_dir, [CHIN_PATH, LEFT_CHEEK_PATH, RIGHT_IRIS_PATH], OCCLUSION_FILL_BLACK)
+#pf.occlude_face_region(in_dir, out_dir, [FACE_SKIN_PATH], OCCLUSION_FILL_BLACK)
 #pf.extract_face_color_means(in_dir, out_dir)
 #pf.face_brightness_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=-30, landmark_regions=[HEMI_FACE_TOP_PATH])
 #pf.face_saturation_shift(input_dir=in_dir, output_dir=out_dir, shift_magnitude=-20.0, landmark_regions=[LEFT_CHEEK_PATH, CHIN_PATH])
 #pf.blur_face_region(input_dir=in_dir, output_dir=out_dir, blur_method="Gaussian", k_size=91)
+pf.apply_noise(input_dir=in_dir, output_dir=out_dir, noise_method=NOISE_METHOD_SALT_AND_PEPPER, rand_seed=1234)
 
 # Creating pyplot style grid of outputs
 

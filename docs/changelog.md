@@ -3,8 +3,26 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- v0.5... unit testing
+- v0.5.8-0.5.9 inversion and scrambling of facial landmarks, bubble occlusion option for `occlude_face_region`
+- v0.6... unit testing
 - v1.0 gui preview prior to file processing
+
+## [0.5.7] - 2024-11-20
+
+### Added
+
+- New function `apply_noise()` has been implemented. This function provides three noise operations to select from; 
+'pixelate', 'gaussian' and 'salt and pepper'. 
+- `apply_noise()` provides a variety of customization options such as specifying the noise probability, mean and standard
+deviation of the gaussian curve to be sampled from, as well as a random seed to be passed to the numpy random number generator. 
+- An expanded set of masking options has been added to pyfameutils.MASK_OPTIONS for use with `mask_face_region()`. `mask_face_region` now also allows the user to specify the background color of output files via a BGR integer color code. 
+
+### Changed
+
+- Previous masking options FACE_OVAL and FACE_OVAL_TIGHT have been removed and replaced by the singular FACE_OVAL_MASK in hopes to alleviate any user confusion between the two options previously. 
+- PsyFace has been officially renamed to PyFAME: the Python Facial Analysis and Manipulation Environment.
+
+### Removed
 
 ## [0.5.6] - 2024-11-12
 
